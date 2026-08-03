@@ -1,0 +1,11 @@
+[package]
+name = "ndap-detect"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+ndap-protocol = { path = "../protocol" }
+ndap-flow = { path = "../flow" }
+ndap-intel = { path = "../intel" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
