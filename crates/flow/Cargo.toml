@@ -1,0 +1,7 @@
+[package]
+name = "ndap-flow"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+ndap-protocol = { path = "../protocol" }

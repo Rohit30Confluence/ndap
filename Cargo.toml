@@ -1,0 +1,15 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/capture",
+    "crates/protocol",
+    "crates/flow",
+    "crates/detect",
+    "crates/intel",
+    "cli",
+    "api",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
