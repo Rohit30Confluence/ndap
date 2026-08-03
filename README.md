@@ -1,73 +1,375 @@
-# NDAP — Network Detection & Analysis Platform
+NDAP — Network Detection & Analysis Platform
 
-All six phases from the original roadmap, built and verified in this pass —
-not just scaffolded. No Wireshark code copied; decoders were written from
-the wire formats (RFC 791/793/768, ARP, classic pcap file format).
+«A modular, extensible network detection and analysis platform written in Rust, designed for offline packet analysis, flow reconstruction, threat detection, threat intelligence integration, and future live capture support.»
 
-**Everything below was actually compiled and test-run in this environment**
-(Ubuntu 24.04, rustc 1.75 via apt, libpcap-dev, libyara 4.5, libclang 18,
-python3.12) — not just written. See "Verification" at the bottom for exact
-commands and results.
+---
 
-## Status by phase
+Overview
 
-| Phase | Crate | Status |
-|---|---|---|
-| 1. Packet Engine | `ndap-capture`, `ndap-protocol` | **Real** — pcap file parser (handles big-endian and nanosecond variants), Ethernet/IPv4/IPv6/ARP/TCP/UDP decode. Verified against a synthetic 140-packet capture. |
-| 2. Protocol Framework | `ndap-protocol` | **Real core, stub plugin loading** — `Dissector` trait + `ProtocolRegistry` for per-port dissectors. `PluginLoader` is still a no-op (dynamic dissector plugins weren't part of this pass's 4 decisions). |
-| 3. Flow Engine | `ndap-flow` | **Real** — 5-tuple conversation tracking, TCP reassembly (in-order + out-of-order buffering, no SACK yet). |
-| 4. Detection Engine | `ndap-detect` | **Real** — port scan, SYN flood, ARP spoof rules, each MITRE-tagged (T1046 / T1499 / T1557). Verified firing against synthetic attack traffic. |
-| 5. Threat Intelligence | `ndap-intel` | **Real** — IOC store (JSON/CSV loaders), Sigma-lite YAML evaluator (selection/condition subset — no aggregations/timeframes), real YARA scanning via `libyara`. 5/5 unit tests passing. |
-| 6. Web UI | `ndap-api` | **Real backend + working dashboard** — Axum REST API (`/`, `/health`, `/analyze`) serving a single-file htmx + Chart.js dashboard (no Node build). No live-stream websocket yet. |
-| Plugin extensibility | `plugins/python-sdk` | **Real** — Python detection rules run out-of-process via JSON-lines IPC over stdin/stdout. Verified round-trip: Rust spawned a Python subprocess, sent a packet, got a correctly parsed alert back. |
+NDAP is built as a collection of independent Rust crates that work together to provide a modern network analysis pipeline.
 
-## Decisions made this pass (previously open questions)
+The project currently implements:
 
-1. **Live capture — cross-platform.** Uses the `pcap` crate (libpcap on Linux/macOS, npcap on Windows). `LiveCapture` trait in `ndap-capture` now has a real `PcapLiveCapture` implementation plus `list_interfaces()`.
-2. **Threat intel format.** IOC store takes plain JSON arrays or CSV (`type,value` lines) — no STIX/TAXII/MISP schema lock-in. Sigma support is a from-scratch minimal evaluator (not the full spec: no `count()`/timeframe aggregations). YARA is real, via `libyara` bindings.
-3. **Frontend stack.** htmx + Chart.js from CDN, single embedded HTML file (`api/static/dashboard.html`, compiled in via `include_str!`) — stays a single deployable binary, no npm/webpack.
-4. **Python plugin runtime.** Out-of-process, JSON-lines over stdin/stdout (`crates/detect/src/plugin.rs` + `plugins/python-sdk/plugin_runner.py`). A crashing or malicious plugin can only take down its own process, not the Rust core.
+- Offline PCAP parsing
+- Ethernet / IPv4 / IPv6 decoding
+- TCP / UDP / ARP protocol parsing
+- Flow reconstruction
+- TCP stream reassembly
+- Detection engine with MITRE ATT&CK mappings
+- IOC matching
+- Sigma-lite rule evaluation
+- Real YARA scanning
+- REST API
+- Browser dashboard
+- Python plugin SDK
 
-## Build & run
+The codebase is designed to remain modular so additional protocol dissectors, detection engines, plugins, and frontend capabilities can be added without changing the core architecture.
 
-```bash
-cd ndap
+---
+
+Project Structure
+
+ndap/
+├── api/
+├── cli/
+├── crates/
+│   ├── capture/
+│   ├── protocol/
+│   ├── flow/
+│   ├── detect/
+│   └── intel/
+├── plugins/
+│   └── python-sdk/
+└── Cargo.toml
+
+---
+
+Current Implementation Status
+
+Phase| Component| Status
+Packet Capture| ndap-capture| ✅ Complete
+Protocol Parsing| ndap-protocol| ✅ Complete
+Flow Tracking| ndap-flow| ✅ Complete
+TCP Reassembly| ndap-flow| ✅ Complete
+Detection Engine| ndap-detect| ✅ Complete
+IOC Matching| ndap-intel| ✅ Complete
+Sigma-lite| ndap-intel| ✅ Complete
+YARA Integration| ndap-intel| ✅ Complete
+REST API| ndap-api| ✅ Complete
+Dashboard| ndap-api| ✅ Complete
+Python Plugin SDK| plugins/python-sdk| ✅ Complete
+Live Capture| ndap-capture| ✅ Basic
+Dynamic Protocol Plugins| Planned| 🚧
+Live Dashboard Streaming| Planned| 🚧
+
+---
+
+Features
+
+Packet Engine
+
+Supports:
+
+- Classic PCAP
+- Big-endian PCAP
+- Nanosecond PCAP
+
+Protocols:
+
+- Ethernet II
+- IPv4
+- IPv6
+- TCP
+- UDP
+- ARP
+
+Protocol decoding is implemented directly from protocol specifications rather than copying Wireshark code.
+
+---
+
+Flow Engine
+
+Implements:
+
+- 5-tuple flow tracking
+- Conversation management
+- TCP stream reconstruction
+- Out-of-order packet buffering
+
+Current limitation:
+
+- No TCP SACK support yet.
+
+---
+
+Detection Engine
+
+Implemented detections include:
+
+- Port Scan
+- SYN Flood
+- ARP Spoofing
+
+Every detection includes MITRE ATT&CK mappings.
+
+Example:
+
+Detection| MITRE
+Port Scan| T1046
+SYN Flood| T1499
+ARP Spoof| T1557
+
+---
+
+Threat Intelligence
+
+Supports:
+
+IOC Store
+
+Input formats
+
+- JSON
+- CSV
+
+Sigma-lite
+
+Supports
+
+- selection
+- and
+- or
+- not
+
+Currently unsupported
+
+- count()
+- timeframe
+- aggregations
+
+YARA
+
+Uses the native YARA engine through libyara.
+
+---
+
+REST API
+
+Current endpoints:
+
+GET /
+GET /health
+POST /analyze
+
+---
+
+Dashboard
+
+Single-file dashboard built using:
+
+- htmx
+- Chart.js
+
+No Node.js build system is required.
+
+---
+
+Python Plugin SDK
+
+Plugins execute outside the Rust process.
+
+Communication:
+
+Rust
+   │
+JSON Lines
+   │
+stdin/stdout
+   │
+Python Plugin
+
+This design prevents plugin crashes from affecting the Rust core.
+
+---
+
+Building
+
+Ubuntu / Debian
+
+Install dependencies
+
+sudo apt update
+
+sudo apt install \
+    clang \
+    libclang-dev \
+    libpcap-dev \
+    libyara-dev \
+    python3 \
+    pkg-config
+
+Build
+
 cargo build --release
-./target/release/ndap path/to/capture.pcap
-```
 
-Requires at build time: `libpcap-dev`, `libyara-dev` + `libclang-dev` (for the `yara` crate's bindgen step). On Ubuntu/Debian:
-```bash
-sudo apt-get install libpcap-dev libyara-dev libclang-dev clang
-```
+Run tests
 
-Web dashboard:
-```bash
+cargo test
+
+---
+
+Building on Termux (Android)
+
+Verified on:
+
+- Android (AArch64)
+- Rust 1.96
+- Cargo 1.96
+- Termux packages
+
+Install dependencies
+
+pkg update
+
+pkg install \
+    git \
+    rust \
+    clang \
+    python \
+    pkg-config \
+    yara \
+    yara-static
+
+Before building, export the include path required by bindgen:
+
+export BINDGEN_EXTRA_CLANG_ARGS="-I$PREFIX/include"
+
+Then build:
+
+cargo build
+
+Run tests:
+
+cargo test
+
+This environment has been successfully verified.
+
+---
+
+Running
+
+CLI
+
+cargo run -p ndap-cli -- capture.pcap
+
+API
+
 cargo run -p ndap-api
-# then open http://localhost:8080 and point it at a .pcap path on the server
-```
 
-Python plugins:
-```bash
-# plugins/python-sdk/ndap_plugin.py defines the DetectionRule contract
-# plugins/python-sdk/plugin_runner.py is the IPC bridge — don't edit unless
-# you're changing the wire protocol (must match crates/detect/src/plugin.rs)
-```
+Then open
 
-## What's deliberately NOT done yet (needs a decision, not more effort)
+http://127.0.0.1:8080
 
-1. **Dynamic dissector plugin loading** (Phase 2's `PluginLoader`) — still a no-op. Needs a decision: dylib loading vs. a scripting bridge.
-2. **Live-stream websocket** in the dashboard — `/analyze` is request/response over a stored pcap; live capture isn't wired into the API yet.
-3. **Sigma aggregations/timeframes** (e.g. `count() by src_ip > 100 in 1m`) — the current evaluator only does per-event boolean matching.
-4. **IOC feed ingestion automation** — loaders exist; nothing pulls from a live feed URL yet.
+---
 
-## Verification (what was actually run, not just written)
+Verification
 
-```
-cargo build --workspace          → Finished, 0 errors
-cargo test -p ndap-intel         → 5 passed (IOC JSON/CSV, Sigma matching,
-                                    Sigma and/or/not, real YARA scan+miss, MITRE tags)
-cargo test -p ndap-detect        → 1 passed (Rust→Python plugin IPC round-trip)
-cargo run -p ndap-cli -- test.pcap → decoded 140 synthetic packets,
-                                      fired port_scan + syn_flood alerts correctly
-```
+Ubuntu
+
+Verified on
+
+- Ubuntu 24.04
+- Rust 1.75
+- libpcap
+- libyara
+- libclang
+
+Results
+
+cargo build --workspace
+PASS
+
+cargo test -p ndap-intel
+5 passed
+
+cargo test -p ndap-detect
+1 passed
+
+cargo run -p ndap-cli test.pcap
+
+Decoded packets successfully
+Detection rules fired correctly
+
+---
+
+Termux (Android)
+
+Verified on
+
+- Android AArch64
+- Rust 1.96
+- Cargo 1.96
+
+Environment
+
+export BINDGEN_EXTRA_CLANG_ARGS="-I$PREFIX/include"
+
+Results
+
+cargo build
+PASS
+
+cargo test
+PASS
+
+ndap_detect
+1 passed
+
+ndap_intel
+5 passed
+
+All workspace tests
+PASS
+
+The only additional requirement on Termux is exporting the include path so "bindgen" can locate "yara.h".
+
+---
+
+Current Limitations
+
+Not yet implemented:
+
+- Dynamic protocol dissector loading
+- Live WebSocket dashboard
+- Sigma aggregations
+- Automated IOC feed synchronization
+- SACK-aware TCP reassembly
+
+---
+
+Roadmap
+
+- Dynamic dissector plugins
+- Live capture integrated with API
+- WebSocket dashboard
+- Full Sigma implementation
+- STIX/TAXII support
+- MISP integration
+- Suricata rule compatibility
+- Zeek log import
+- Additional protocol dissectors
+- Detection performance optimizations
+
+---
+
+License
+
+Choose an appropriate open-source license before the first stable release.
+
+---
+
+Acknowledgements
+
+Protocol implementations are based on publicly documented protocol specifications (RFCs) and original implementations.
+
+No Wireshark source code has been copied into this project.
