@@ -1,0 +1,7 @@
+[package]
+name = "ndap-capture"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+pcap = "1.3"
