@@ -1,7 +1,0 @@
-[package]
-name = "ndap-intel"
-version.workspace = true
-edition.workspace = true
-
-[dependencies]
-yara-x = "1.19"
