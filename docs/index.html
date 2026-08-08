@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NDAP — Network Detection & Analysis Platform</title>
+<meta name="description" content="Modular network detection & analysis platform. Packet engine, flow tracking, detection rules, threat intel, REST dashboard. Rust core, Python plugin extensibility.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0d12;
+    --bg-raised: #10141b;
+    --line: #1e2530;
+    --text: #d7dde5;
+    --text-dim: #7c8798;
+    --text-faint: #4a5567;
+    --real: #6fd9a8;
+    --real-dim: #2d4a3d;
+    --stub: #e8a33d;
+    --stub-dim: #4a3a1e;
+    --accent: #5aa9e6;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --sans: 'IBM Plex Sans', -apple-system, sans-serif;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ scroll-behavior:smooth; }
+
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:64px 64px;
+    opacity:0.25;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  a{ color:var(--accent); text-decoration:none; }
+  a:hover{ text-decoration:underline; }
+  a:focus-visible, button:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+
+  .wrap{ max-width:960px; margin:0 auto; padding:0 24px; position:relative; z-index:1; }
+
+  code, .mono{ font-family:var(--mono); }
+
+  /* ---------- header ---------- */
+  header{
+    border-bottom:1px solid var(--line);
+    padding:18px 0;
+    position:sticky; top:0;
+    background:rgba(10,13,18,0.92);
+    backdrop-filter:blur(8px);
+    z-index:10;
+  }
+  header .wrap{ display:flex; align-items:center; justify-content:space-between; }
+  .brand{ font-family:var(--mono); font-weight:600; font-size:15px; color:var(--text); display:flex; align-items:center; gap:10px; }
+  .brand-dot{ width:8px; height:8px; border-radius:50%; background:var(--real); box-shadow:0 0 8px var(--real); }
+  nav a{ color:var(--text-dim); font-size:13px; font-family:var(--mono); margin-left:24px; }
+  nav a:hover{ color:var(--text); text-decoration:none; }
+
+  /* ---------- hero ---------- */
+  .hero{ padding:96px 0 64px; }
+  .eyebrow{
+    font-family:var(--mono); font-size:12px; letter-spacing:0.08em;
+    color:var(--text-faint); text-transform:uppercase; margin-bottom:20px;
+  }
+  h1{
+    font-family:var(--mono); font-weight:700;
+    font-size:clamp(32px, 5vw, 52px);
+    line-height:1.15; letter-spacing:-0.01em;
+    color:#fff; max-width:16ch;
+  }
+  .hero-sub{
+    color:var(--text-dim); font-size:17px; max-width:52ch; margin-top:22px;
+  }
+  .hero-cta{ display:flex; gap:12px; margin-top:36px; flex-wrap:wrap; }
+  .btn{
+    font-family:var(--mono); font-size:13px; padding:11px 18px;
+    border-radius:3px; border:1px solid var(--line);
+  }
+  .btn-primary{ background:var(--text); color:var(--bg); border-color:var(--text); font-weight:600; }
+  .btn-primary:hover{ background:#fff; text-decoration:none; }
+  .btn-ghost{ color:var(--text); }
+  .btn-ghost:hover{ background:var(--bg-raised); text-decoration:none; }
+
+  /* ---------- verification strip ---------- */
+  .verify-strip{
+    font-family:var(--mono); font-size:12.5px; color:var(--text-faint);
+    border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+    padding:14px 0; margin-top:56px;
+    display:flex; gap:28px; flex-wrap:wrap;
+  }
+  .verify-strip span{ color:var(--real); }
+
+  /* ---------- section ---------- */
+  section{ padding:64px 0; border-bottom:1px solid var(--line); }
+  .section-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:32px; }
+  .section-num{ font-family:var(--mono); color:var(--text-faint); font-size:13px; }
+  h2{ font-family:var(--mono); font-size:22px; color:#fff; font-weight:600; }
+  .section-desc{ color:var(--text-dim); max-width:60ch; margin-bottom:36px; font-size:15px; }
+
+  /* ---------- status board (signature element) ---------- */
+  .board{ border:1px solid var(--line); border-radius:4px; overflow:hidden; background:var(--bg-raised); }
+  .board-row{
+    display:grid;
+    grid-template-columns:26px 150px 1fr 100px;
+    gap:16px; align-items:start;
+    padding:16px 20px;
+    border-bottom:1px solid var(--line);
+  }
+  .board-row:last-child{ border-bottom:none; }
+  .board-row:hover{ background:rgba(255,255,255,0.015); }
+  .status-dot{ width:9px; height:9px; border-radius:50%; margin-top:6px; }
+  .status-dot.real{ background:var(--real); box-shadow:0 0 6px var(--real); }
+  .status-dot.stub{ background:var(--stub); box-shadow:0 0 6px var(--stub); }
+  .board-crate{ font-family:var(--mono); font-size:13px; color:var(--text); }
+  .board-crate small{ display:block; color:var(--text-faint); font-size:11px; margin-top:3px; }
+  .board-desc{ font-size:13.5px; color:var(--text-dim); }
+  .board-tag{
+    font-family:var(--mono); font-size:11px; text-align:right;
+    letter-spacing:0.03em; align-self:center;
+  }
+  .board-tag.real{ color:var(--real); }
+  .board-tag.stub{ color:var(--stub); }
+
+  @media (max-width:640px){
+    .board-row{ grid-template-columns:20px 1fr; }
+    .board-tag{ grid-column:2; text-align:left; margin-top:4px; }
+  }
+
+  /* ---------- decisions list ---------- */
+  .decision{
+    display:flex; gap:18px; padding:20px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .decision:last-child{ border-bottom:none; }
+  .decision-n{ font-family:var(--mono); color:var(--accent); font-size:13px; flex-shrink:0; width:20px; }
+  .decision-title{ font-weight:600; color:var(--text); font-size:14.5px; margin-bottom:4px; }
+  .decision-body{ color:var(--text-dim); font-size:14px; }
+  .decision-body code{ background:var(--bg-raised); padding:2px 6px; border-radius:3px; font-size:12.5px; color:var(--accent); }
+
+  /* ---------- not done ---------- */
+  .notdone{
+    display:flex; gap:14px; align-items:flex-start; padding:16px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .notdone:last-child{ border-bottom:none; }
+  .notdone-dot{ color:var(--stub); font-family:var(--mono); font-size:13px; margin-top:2px; }
+  .notdone-title{ font-weight:600; font-size:14px; color:var(--text); }
+  .notdone-body{ color:var(--text-dim); font-size:13.5px; margin-top:3px; }
+
+  /* ---------- terminal block ---------- */
+  .terminal{
+    background:#06080c; border:1px solid var(--line); border-radius:4px;
+    padding:20px 22px; font-family:var(--mono); font-size:12.5px;
+    color:var(--text-dim); overflow-x:auto;
+  }
+  .terminal .prompt{ color:var(--real); }
+  .terminal .comment{ color:var(--text-faint); }
+  .terminal pre{ white-space:pre-wrap; word-break:break-word; }
+
+  /* ---------- footer ---------- */
+  footer{ padding:40px 0 60px; }
+  footer .wrap{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
+  footer p{ color:var(--text-faint); font-size:12.5px; font-family:var(--mono); }
+  footer nav a{ margin-left:0; margin-right:20px; }
+
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior:auto; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="brand"><span class="brand-dot"></span>NDAP</div>
+    <nav>
+      <a href="#status">Status</a>
+      <a href="#decisions">Decisions</a>
+      <a href="#build">Build</a>
+      <a href="https://github.com/Rohit30Confluence/ndap">GitHub ↗</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="hero wrap">
+    <div class="eyebrow">Rust core · Python plugin extensibility</div>
+    <h1>Network detection, decoded from the wire up.</h1>
+    <p class="hero-sub">A modular platform for packet capture, flow tracking, rule-based detection, and threat intel — built as six independently verifiable crates, not one monolith pretending to be finished.</p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="https://github.com/Rohit30Confluence/ndap">View source</a>
+      <a class="btn btn-ghost" href="#build">Build & run →</a>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="verify-strip">
+      <div><span>0 errors</span> — cargo build --workspace</div>
+      <div><span>5/5 passed</span> — ndap-intel (IOC, Sigma, YARA, MITRE)</div>
+      <div><span>1/1 passed</span> — Rust↔Python plugin IPC round-trip</div>
+      <div><span>140/140</span> synthetic packets decoded, alerts fired correctly</div>
+    </div>
+  </div>
+
+  <section id="status">
+    <div class="wrap">
+      <div class="section-head"><span class="section-num">01</span><h2>Status by phase</h2></div>
+      <p class="section-desc">Every phase below shipped real, working code in this pass — with one exception marked deliberately. Dot color tells you which is which.</p>
+
+      <div class="board">
+        <div class="board-row">
+          <div class="status-dot real"></div>
+          <div class="board-crate">Packet Engine<small>ndap-capture, ndap-protocol</small></div>
+          <div class="board-desc">pcap file parsing (big-endian + nanosecond variants), Ethernet/IPv4/IPv6/ARP/TCP/UDP decode. Verified against a synthetic 140-packet capture.</div>
+          <div class="board-tag real">REAL</div>
+        </div>
+        <div class="board-row">
+          <div class="status-dot stub"></div>
+          <div class="board-crate">Protocol Framework<small>ndap-protocol</small></div>
+          <div class="board-desc"><code class="mono">Dissector</code> trait + <code class="mono">ProtocolRegistry</code> for per-port dissectors. Dynamic <code class="mono">PluginLoader</code> is still a no-op.</div>
+          <div class="board-tag stub">STUB LOADING</div>
+        </div>
+        <div class="board-row">
+          <div class="status-dot real"></div>
+          <div class="board-crate">Flow Engine<small>ndap-flow</small></div>
+          <div class="board-desc">5-tuple conversation tracking, TCP reassembly — in-order and out-of-order buffering. No SACK yet.</div>
+          <div class="board-tag real">REAL</div>
+        </div>
+        <div class="board-row">
+          <div class="status-dot real"></div>
+          <div class="board-crate">Detection Engine<small>ndap-detect</small></div>
+          <div class="board-desc">Port scan, SYN flood, ARP spoof rules — each MITRE-tagged (T1046 / T1499 / T1557). Verified against synthetic attack traffic.</div>
+          <div class="board-tag real">REAL</div>
+        </div>
+        <div class="board-row">
+          <div class="status-dot real"></div>
+          <div class="board-crate">Threat Intelligence<small>ndap-intel</small></div>
+          <div class="board-desc">IOC store (JSON/CSV), Sigma-lite YAML evaluator, real YARA scanning via libyara. 5/5 unit tests passing.</div>
+          <div class="board-tag real">REAL</div>
+        </div>
+        <div class="board-row">
+          <div class="status-dot real"></div>
+          <div class="board-crate">Web UI<small>ndap-api</small></div>
+          <div class="board-desc">Axum REST API (/, /health, /analyze) serving an embedded htmx + Chart.js dashboard. No live-stream websocket yet.</div>
+          <div class="board-tag real">REAL</div>
+        </div>
+        <div class="board-row">
+          <div class="status-dot real"></div>
+          <div class="board-crate">Plugin Extensibility<small>plugins/python-sdk</small></div>
+          <div class="board-desc">Python detection rules run out-of-process via JSON-lines IPC. Verified round-trip: Rust spawns Python, sends a packet, gets a parsed alert back.</div>
+          <div class="board-tag real">REAL</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="decisions">
+    <div class="wrap">
+      <div class="section-head"><span class="section-num">02</span><h2>Decisions made this pass</h2></div>
+      <p class="section-desc">Four previously-open questions, resolved and implemented — not left as TODOs.</p>
+
+      <div class="decisions">
+        <div class="decision">
+          <div class="decision-n">01</div>
+          <div>
+            <div class="decision-title">Live capture, cross-platform</div>
+            <div class="decision-body">Uses the <code>pcap</code> crate — libpcap on Linux/macOS, npcap on Windows. <code>LiveCapture</code> trait now has a real <code>PcapLiveCapture</code> implementation plus <code>list_interfaces()</code>.</div>
+          </div>
+        </div>
+        <div class="decision">
+          <div class="decision-n">02</div>
+          <div>
+            <div class="decision-title">Threat intel format</div>
+            <div class="decision-body">Plain JSON arrays or CSV (<code>type,value</code>) — no STIX/TAXII/MISP lock-in. Sigma support is a from-scratch minimal evaluator; no count()/timeframe aggregations. YARA is real, via libyara bindings.</div>
+          </div>
+        </div>
+        <div class="decision">
+          <div class="decision-n">03</div>
+          <div>
+            <div class="decision-title">Frontend stack</div>
+            <div class="decision-body">htmx + Chart.js from CDN, single embedded HTML file (<code>api/static/dashboard.html</code>, compiled in via <code>include_str!</code>) — stays a single deployable binary, no npm/webpack.</div>
+          </div>
+        </div>
+        <div class="decision">
+          <div class="decision-n">04</div>
+          <div>
+            <div class="decision-title">Python plugin runtime</div>
+            <div class="decision-body">Out-of-process, JSON-lines over stdin/stdout. A crashing or malicious plugin can only take down its own process, not the Rust core.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head"><span class="section-num">03</span><h2>Deliberately not done yet</h2></div>
+      <p class="section-desc">Gaps that need a decision, not more effort.</p>
+
+      <div class="notdone-list">
+        <div class="notdone">
+          <div class="notdone-dot">○</div>
+          <div><div class="notdone-title">Dynamic dissector plugin loading</div><div class="notdone-body">Phase 2's PluginLoader is still a no-op. Needs a decision: dylib loading vs. a scripting bridge.</div></div>
+        </div>
+        <div class="notdone">
+          <div class="notdone-dot">○</div>
+          <div><div class="notdone-title">Live-stream websocket</div><div class="notdone-body">/analyze is request/response over a stored pcap; live capture isn't wired into the API yet.</div></div>
+        </div>
+        <div class="notdone">
+          <div class="notdone-dot">○</div>
+          <div><div class="notdone-title">Sigma aggregations / timeframes</div><div class="notdone-body">e.g. count() by src_ip &gt; 100 in 1m — the current evaluator only does per-event boolean matching.</div></div>
+        </div>
+        <div class="notdone">
+          <div class="notdone-dot">○</div>
+          <div><div class="notdone-title">IOC feed ingestion automation</div><div class="notdone-body">Loaders exist; nothing pulls from a live feed URL yet.</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="build" style="border-bottom:none;">
+    <div class="wrap">
+      <div class="section-head"><span class="section-num">04</span><h2>Build & run</h2></div>
+
+      <div class="terminal">
+<pre><span class="comment"># requires libpcap-dev, libyara-dev, libclang-dev (yara crate bindgen)</span>
+<span class="prompt">$</span> sudo apt-get install libpcap-dev libyara-dev libclang-dev clang
+
+<span class="prompt">$</span> cd ndap && cargo build --release
+<span class="prompt">$</span> ./target/release/ndap path/to/capture.pcap
+
+<span class="comment"># web dashboard</span>
+<span class="prompt">$</span> cargo run -p ndap-api
+<span class="comment"># → http://localhost:8080, point it at a .pcap path on the server</span></pre>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <nav>
+      <a href="https://github.com/Rohit30Confluence/ndap">GitHub</a>
+      <a href="https://github.com/Rohit30Confluence/ndap/blob/main/LICENSE">MIT License</a>
+    </nav>
+    <p>ndap · rust core · python plugin extensibility</p>
+  </div>
+</footer>
+
+</body>
+                                  </html>
+
