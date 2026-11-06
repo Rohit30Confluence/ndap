@@ -11,22 +11,44 @@
 //!   data instead of Rust code.
 //! - MITRE ATT&CK technique tags attachable to alerts from ndap-detect.
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fs;
 use std::net::IpAddr;
+use std::sync::{Arc, RwLock};
 
 // ---------------------------------------------------------------------
 // IOC store
 // ---------------------------------------------------------------------
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Ioc {
     Ip(IpAddr),
     Domain(String),
     FileHash(String), // sha256 hex
 }
 
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct IocStats {
+    pub total: usize,
+    pub ips: usize,
+    pub domains: usize,
+    pub hashes: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IocFeedSource {
+    pub name: String,
+    pub url: String,
+    pub enabled: bool,
+    pub refresh_interval_secs: u64,
+    pub last_sync_time: Option<u64>,
+    pub last_item_count: usize,
+    pub last_error: Option<String>,
+}
+
+#[derive(Clone)]
 pub struct IocStore {
     ips: HashSet<IpAddr>,
     domains: HashSet<String>,
@@ -66,16 +88,17 @@ impl IocStore {
         self.len() == 0
     }
 
-    /// Load IOCs from a plain-text CSV feed: one `type,value` pair per
-    /// line, `type` in {ip, domain, hash}. Blank lines and lines starting
-    /// with `#` are skipped. This is intentionally the simplest possible
-    /// feed format (not STIX/TAXII or a MISP export) — those need a
-    /// decision on which feed you actually want to pull from; this format
-    /// is trivial to generate from any of them with a one-line script.
-    ///
-    /// Returns the number of IOCs loaded.
-    pub fn load_from_file(&mut self, path: &str) -> Result<usize, String> {
-        let contents = fs::read_to_string(path).map_err(|e| format!("reading {path}: {e}"))?;
+    pub fn stats(&self) -> IocStats {
+        IocStats {
+            total: self.len(),
+            ips: self.ips.len(),
+            domains: self.domains.len(),
+            hashes: self.hashes.len(),
+        }
+    }
+
+    /// Load IOCs from a plain-text CSV feed string: one `type,value` per line.
+    pub fn load_from_str(&mut self, contents: &str) -> Result<usize, String> {
         let mut loaded = 0;
         for (lineno, line) in contents.lines().enumerate() {
             let line = line.trim();
@@ -87,21 +110,21 @@ impl IocStore {
             let value = match parts.next() {
                 Some(v) => v.trim(),
                 None => {
-                    return Err(format!("{path}:{}: expected `type,value`, got `{line}`", lineno + 1))
+                    return Err(format!("line {}: expected `type,value`, got `{line}`", lineno + 1))
                 }
             };
             match kind {
                 "ip" => {
                     let ip: IpAddr = value
                         .parse()
-                        .map_err(|_| format!("{path}:{}: invalid IP `{value}`", lineno + 1))?;
+                        .map_err(|_| format!("line {}: invalid IP `{value}`", lineno + 1))?;
                     self.add(Ioc::Ip(ip));
                 }
                 "domain" => self.add(Ioc::Domain(value.to_string())),
                 "hash" => self.add(Ioc::FileHash(value.to_string())),
                 other => {
                     return Err(format!(
-                        "{path}:{}: unknown IOC type `{other}` (expected ip, domain, or hash)",
+                        "line {}: unknown IOC type `{other}` (expected ip, domain, or hash)",
                         lineno + 1
                     ))
                 }
@@ -110,11 +133,188 @@ impl IocStore {
         }
         Ok(loaded)
     }
+
+    /// Load IOCs from JSON: accepts an array of {"type": "...", "value": "..."} objects.
+    pub fn load_from_json(&mut self, json_str: &str) -> Result<usize, String> {
+        #[derive(Deserialize)]
+        struct RawIocItem {
+            #[serde(rename = "type")]
+            kind: String,
+            value: String,
+        }
+
+        let items: Vec<RawIocItem> = serde_json::from_str(json_str)
+            .map_err(|e| format!("parsing IOC JSON: {e}"))?;
+
+        let mut loaded = 0;
+        for item in items {
+            match item.kind.to_lowercase().as_str() {
+                "ip" => {
+                    if let Ok(ip) = item.value.parse::<IpAddr>() {
+                        self.add(Ioc::Ip(ip));
+                        loaded += 1;
+                    }
+                }
+                "domain" => {
+                    self.add(Ioc::Domain(item.value));
+                    loaded += 1;
+                }
+                "hash" => {
+                    self.add(Ioc::FileHash(item.value));
+                    loaded += 1;
+                }
+                _ => {}
+            }
+        }
+        Ok(loaded)
+    }
+
+    /// Load IOCs from a local CSV file.
+    pub fn load_from_file(&mut self, path: &str) -> Result<usize, String> {
+        let contents = fs::read_to_string(path).map_err(|e| format!("reading {path}: {e}"))?;
+        self.load_from_str(&contents)
+    }
 }
 
 impl Default for IocStore {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Automated IOC Feed Synchronizer managing multiple remote/local feed sources.
+#[derive(Clone)]
+pub struct IocSyncManager {
+    store: Arc<RwLock<IocStore>>,
+    sources: Arc<RwLock<Vec<IocFeedSource>>>,
+}
+
+impl IocSyncManager {
+    pub fn new(store: Arc<RwLock<IocStore>>) -> Self {
+        Self {
+            store,
+            sources: Arc::new(RwLock::new(Vec::new())),
+        }
+    }
+
+    pub fn add_source(&self, source: IocFeedSource) {
+        if let Ok(mut sources) = self.sources.write() {
+            sources.retain(|s| s.name != source.name);
+            sources.push(source);
+        }
+    }
+
+    pub fn get_sources(&self) -> Vec<IocFeedSource> {
+        self.sources.read().map(|s| s.clone()).unwrap_or_default()
+    }
+
+    pub fn get_stats(&self) -> IocStats {
+        self.store.read().map(|s| s.stats()).unwrap_or_default()
+    }
+
+    /// Synchronizes a specific feed source using provided raw data string.
+    pub fn sync_source_data(&self, name: &str, data: &str, now_ts: u64) -> Result<usize, String> {
+        let mut store = self.store.write().map_err(|_| "failed to lock IOC store".to_string())?;
+        let count = if data.trim_start().starts_with('[') {
+            store.load_from_json(data)?
+        } else {
+            store.load_from_str(data)?
+        };
+
+        if let Ok(mut sources) = self.sources.write() {
+            if let Some(src) = sources.iter_mut().find(|s| s.name == name) {
+                src.last_sync_time = Some(now_ts);
+                src.last_item_count = count;
+                src.last_error = None;
+            }
+        }
+        Ok(count)
+    }
+
+    /// Returns a list of enabled sources that are due for refresh.
+    pub fn sources_due_for_sync(&self, now_ts: u64) -> Vec<IocFeedSource> {
+        let sources = match self.sources.read() {
+            Ok(s) => s.clone(),
+            Err(_) => return Vec::new(),
+        };
+
+        sources
+            .into_iter()
+            .filter(|s| {
+                if !s.enabled {
+                    return false;
+                }
+                match s.last_sync_time {
+                    None => true,
+                    Some(last) => now_ts.saturating_sub(last) >= s.refresh_interval_secs,
+                }
+            })
+            .collect()
+    }
+
+    /// Fetches IOC feed content from a URL (`file://`, `http://`, `https://`, or local path).
+    pub fn fetch_url(url: &str) -> Result<String, String> {
+        if let Some(path) = url.strip_prefix("file://") {
+            return fs::read_to_string(path).map_err(|e| format!("reading {path}: {e}"));
+        }
+        if url.starts_with("http://") || url.starts_with("https://") {
+            let output = std::process::Command::new("curl")
+                .args(["-sSL", "--max-time", "15", url])
+                .output()
+                .map_err(|e| format!("executing curl for {url}: {e}"))?;
+            if !output.status.success() {
+                return Err(format!("curl request to {url} failed with exit status {:?}", output.status.code()));
+            }
+            return String::from_utf8(output.stdout)
+                .map_err(|e| format!("invalid UTF-8 in response from {url}: {e}"));
+        }
+        // Fallback to local file path
+        fs::read_to_string(url).map_err(|e| format!("reading file {url}: {e}"))
+    }
+
+    /// Fetches and synchronizes a specific named feed source.
+    pub fn sync_source(&self, name: &str, now_ts: u64) -> Result<usize, String> {
+        let source = {
+            let sources = self.sources.read().map_err(|_| "failed to read sources".to_string())?;
+            sources.iter().find(|s| s.name == name).cloned()
+        };
+
+        let Some(source) = source else {
+            return Err(format!("feed source '{name}' not found"));
+        };
+
+        match Self::fetch_url(&source.url) {
+            Ok(content) => {
+                let res = self.sync_source_data(name, &content, now_ts);
+                if let Err(ref e) = res {
+                    if let Ok(mut sources) = self.sources.write() {
+                        if let Some(s) = sources.iter_mut().find(|s| s.name == name) {
+                            s.last_error = Some(e.clone());
+                        }
+                    }
+                }
+                res
+            }
+            Err(e) => {
+                if let Ok(mut sources) = self.sources.write() {
+                    if let Some(s) = sources.iter_mut().find(|s| s.name == name) {
+                        s.last_error = Some(e.clone());
+                    }
+                }
+                Err(e)
+            }
+        }
+    }
+
+    /// Automatically synchronizes all sources that are currently due for refresh.
+    pub fn sync_all_due(&self, now_ts: u64) -> Vec<(String, Result<usize, String>)> {
+        let due = self.sources_due_for_sync(now_ts);
+        let mut results = Vec::new();
+        for src in due {
+            let res = self.sync_source(&src.name, now_ts);
+            results.push((src.name, res));
+        }
+        results
     }
 }
 
@@ -189,6 +389,71 @@ impl YaraScanner {
                 namespace: r.namespace().to_string(),
             })
             .collect()
+    }
+
+    /// Fetches IOC feed content from a URL (`file://`, `http://`, `https://`, or local path).
+    pub fn fetch_url(url: &str) -> Result<String, String> {
+        if let Some(path) = url.strip_prefix("file://") {
+            return fs::read_to_string(path).map_err(|e| format!("reading {path}: {e}"));
+        }
+        if url.starts_with("http://") || url.starts_with("https://") {
+            let output = std::process::Command::new("curl")
+                .args(["-sSL", "--max-time", "15", url])
+                .output()
+                .map_err(|e| format!("executing curl for {url}: {e}"))?;
+            if !output.status.success() {
+                return Err(format!("curl request to {url} failed with exit status {:?}", output.status.code()));
+            }
+            return String::from_utf8(output.stdout)
+                .map_err(|e| format!("invalid UTF-8 in response from {url}: {e}"));
+        }
+        // Fallback to local file path
+        fs::read_to_string(url).map_err(|e| format!("reading file {url}: {e}"))
+    }
+
+    /// Fetches and synchronizes a specific named feed source.
+    pub fn sync_source(&self, name: &str, now_ts: u64) -> Result<usize, String> {
+        let source = {
+            let sources = self.sources.read().map_err(|_| "failed to read sources".to_string())?;
+            sources.iter().find(|s| s.name == name).cloned()
+        };
+
+        let Some(source) = source else {
+            return Err(format!("feed source '{name}' not found"));
+        };
+
+        match Self::fetch_url(&source.url) {
+            Ok(content) => {
+                let res = self.sync_source_data(name, &content, now_ts);
+                if let Err(ref e) = res {
+                    if let Ok(mut sources) = self.sources.write() {
+                        if let Some(s) = sources.iter_mut().find(|s| s.name == name) {
+                            s.last_error = Some(e.clone());
+                        }
+                    }
+                }
+                res
+            }
+            Err(e) => {
+                if let Ok(mut sources) = self.sources.write() {
+                    if let Some(s) = sources.iter_mut().find(|s| s.name == name) {
+                        s.last_error = Some(e.clone());
+                    }
+                }
+                Err(e)
+            }
+        }
+    }
+
+    /// Automatically synchronizes all sources that are currently due for refresh.
+    pub fn sync_all_due(&self, now_ts: u64) -> Vec<(String, Result<usize, String>)> {
+        let due = self.sources_due_for_sync(now_ts);
+        let mut results = Vec::new();
+        for src in due {
+            let res = self.sync_source(&src.name, now_ts);
+            results.push((src.name, res));
+        }
+        results
     }
 }
 
@@ -310,6 +575,10 @@ pub fn mitre_for_rule(rule_name: &str) -> Option<MitreTechnique> {
             id: "T1552".to_string(),
             name: "Unsecured Credentials".to_string(),
         }),
+        "c2_beaconing" => Some(MitreTechnique {
+            id: "T1071".to_string(),
+            name: "Standard Application Layer Protocol".to_string(),
+        }),
         _ => None,
     }
 }
@@ -368,10 +637,79 @@ mod tests {
     }
 
     #[test]
+    fn ioc_json_and_sync_manager() {
+        let store = Arc::new(RwLock::new(IocStore::new()));
+        let sync_mgr = IocSyncManager::new(Arc::clone(&store));
+
+        let source = IocFeedSource {
+            name: "otx_alienvault".into(),
+            url: "https://otx.alienvault.com/api/v1/indicators/export".into(),
+            enabled: true,
+            refresh_interval_secs: 3600,
+            last_sync_time: None,
+            last_item_count: 0,
+            last_error: None,
+        };
+        sync_mgr.add_source(source);
+
+        let json_feed = r#"[
+            {"type": "ip", "value": "198.51.100.99"},
+            {"type": "domain", "value": "c2-malicious.org"},
+            {"type": "hash", "value": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}
+        ]"#;
+
+        let loaded = sync_mgr.sync_source_data("otx_alienvault", json_feed, 1000).unwrap();
+        assert_eq!(loaded, 3);
+
+        let stats = sync_mgr.get_stats();
+        assert_eq!(stats.total, 3);
+        assert_eq!(stats.ips, 1);
+        assert_eq!(stats.domains, 1);
+        assert_eq!(stats.hashes, 1);
+
+        let sources = sync_mgr.get_sources();
+        assert_eq!(sources.len(), 1);
+        assert_eq!(sources[0].last_item_count, 3);
+        assert_eq!(sources[0].last_sync_time, Some(1000));
+
+        let due = sync_mgr.sources_due_for_sync(2000); // 1000s elapsed, interval 3600s
+        assert!(due.is_empty());
+
+        let due = sync_mgr.sources_due_for_sync(5000); // 4000s elapsed >= 3600s
+        assert_eq!(due.len(), 1);
+
+        // Test file:// sync and sync_all_due
+        let temp_dir = std::env::temp_dir();
+        let feed_file = temp_dir.join("test_feed.csv");
+        std::fs::write(&feed_file, "ip,203.0.113.42\ndomain,evil-c2.com\n").unwrap();
+
+        let file_source = IocFeedSource {
+            name: "local_threat_feed".into(),
+            url: format!("file://{}", feed_file.display()),
+            enabled: true,
+            refresh_interval_secs: 60,
+            last_sync_time: None,
+            last_item_count: 0,
+            last_error: None,
+        };
+        sync_mgr.add_source(file_source);
+
+        let results = sync_mgr.sync_all_due(5000);
+        let local_res = results.iter().find(|(name, _)| name == "local_threat_feed").unwrap();
+        assert_eq!(local_res.1.as_ref().unwrap(), &2);
+
+        let store_guard = store.read().unwrap();
+        assert!(store_guard.matches_ip(&"203.0.113.42".parse().unwrap()));
+        assert!(store_guard.matches_domain("evil-c2.com"));
+        let _ = std::fs::remove_file(feed_file);
+    }
+
+    #[test]
     fn mitre_mapping_known_rules() {
         assert_eq!(mitre_for_rule("port_scan").unwrap().id, "T1046");
         assert_eq!(mitre_for_rule("dns_tunnel").unwrap().id, "T1071.004");
         assert_eq!(mitre_for_rule("cleartext_credentials").unwrap().id, "T1552");
+        assert_eq!(mitre_for_rule("c2_beaconing").unwrap().id, "T1071");
         assert!(mitre_for_rule("nonexistent_rule").is_none());
     }
 }

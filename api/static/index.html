@@ -2,136 +2,536 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>NDAP Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NDAP — Network Detection & Analysis Platform</title>
 <style>
   :root {
-    --bg: #0b0f14;
-    --panel: #121821;
-    --border: #232c38;
-    --text: #d8e1ec;
-    --muted: #8291a3;
-    --accent: #4fb0ff;
-    --low: #5b8fd6;
-    --medium: #e0b23a;
-    --high: #e0793a;
-    --critical: #e0453a;
+    --bg: #090d13;
+    --panel: #111722;
+    --panel-header: #161f2e;
+    --border: #222d3d;
+    --border-bright: #303f54;
+    --text: #e1e7f0;
+    --muted: #7e8d9f;
+    --accent: #38bdf8;
+    --accent-glow: rgba(56, 189, 248, 0.25);
+    --green: #22c55e;
+    --green-glow: rgba(34, 197, 94, 0.3);
+    --low: #3b82f6;
+    --medium: #f59e0b;
+    --high: #f97316;
+    --critical: #ef4444;
+    --critical-glow: rgba(239, 68, 68, 0.3);
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background: var(--bg);
     color: var(--text);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
   }
   header {
-    padding: 20px 28px;
+    padding: 14px 24px;
+    background: var(--panel-header);
     border-bottom: 1px solid var(--border);
     display: flex;
-    align-items: baseline;
-    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
   }
-  header h1 { font-size: 18px; margin: 0; letter-spacing: 0.02em; }
-  header span { color: var(--muted); font-size: 13px; }
-  main { padding: 24px 28px; max-width: 1000px; margin: 0 auto; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    width: 30px; height: 30px;
+    background: linear-gradient(135deg, #0284c7, #38bdf8);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 15px; color: #fff;
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+  header h1 { font-size: 17px; margin: 0; font-weight: 700; letter-spacing: 0.04em; }
+  header .subtitle { color: var(--muted); font-size: 12px; }
+  .ws-status {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 12px; border-radius: 20px;
+    background: #0d131d; border: 1px solid var(--border);
+    font-size: 12px; font-weight: 500;
+  }
+  .ws-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #64748b; transition: all 0.3s ease;
+  }
+  .ws-dot.live {
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green-glow);
+    animation: pulse 2s infinite;
+  }
+  .ws-dot.error { background: var(--critical); box-shadow: 0 0 8px var(--critical-glow); }
+  @keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  main {
+    flex: 1; padding: 20px 24px; max-width: 1300px;
+    width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 16px;
+  }
+
+  .grid-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+  }
+  .stat-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .stat-card .val {
+    font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .stat-card .lbl {
+    font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;
+  }
+
   .panel {
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 18px 20px;
-    margin-bottom: 20px;
+    border-radius: 8px;
+    overflow: hidden;
   }
-  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .panel-head {
+    padding: 12px 18px;
+    background: var(--panel-header);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel-title { font-size: 14px; font-weight: 600; }
+  .panel-body { padding: 16px 18px; }
+
+  .controls-row {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  }
   input[type=text] {
-    flex: 1;
-    min-width: 240px;
-    background: #0e141c;
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 9px 12px;
-    border-radius: 6px;
-    font-size: 14px;
+    flex: 1; min-width: 260px;
+    background: #0a0e16; border: 1px solid var(--border);
+    color: var(--text); padding: 8px 12px; border-radius: 6px; font-size: 13px;
   }
+  input[type=text]:focus { outline: none; border-color: var(--accent); }
   button {
-    background: var(--accent);
-    color: #08131f;
-    border: none;
-    padding: 9px 16px;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
+    background: #1f2937; color: var(--text);
+    border: 1px solid var(--border-bright); padding: 8px 15px; border-radius: 6px;
+    font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.15s ease;
+    display: inline-flex; align-items: center; gap: 6px;
   }
+  button:hover:not(:disabled) { background: #374151; }
+  button.btn-primary { background: #0284c7; color: #fff; border-color: #0369a1; }
+  button.btn-primary:hover:not(:disabled) { background: #0369a1; }
+  button.btn-success { background: #16a34a; color: #fff; border-color: #15803d; }
+  button.btn-success:hover:not(:disabled) { background: #15803d; }
+  button.btn-danger { background: #dc2626; color: #fff; border-color: #b91c1c; }
+  button.btn-danger:hover:not(:disabled) { background: #b91c1c; }
   button:disabled { opacity: 0.5; cursor: default; }
-  .stats { display: flex; gap: 28px; margin-top: 4px; }
-  .stat .n { font-size: 26px; font-weight: 700; }
-  .stat .l { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
-  th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
-  .sev { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
-  .sev-low { background: rgba(91,143,214,0.15); color: var(--low); }
-  .sev-medium { background: rgba(224,178,58,0.15); color: var(--medium); }
-  .sev-high { background: rgba(224,121,58,0.15); color: var(--high); }
-  .sev-critical { background: rgba(224,69,58,0.15); color: var(--critical); }
-  .mitre { color: var(--muted); font-family: ui-monospace, monospace; font-size: 12px; }
-  .empty { color: var(--muted); font-size: 13px; padding: 12px 0; }
-  .err { color: var(--critical); font-size: 13px; margin-top: 8px; }
-  .proto-badge {
-    background: #192230;
-    border: 1px solid var(--border);
-    color: var(--accent);
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-family: ui-monospace, monospace;
-    font-weight: 500;
+
+  .tabs {
+    display: flex; border-bottom: 1px solid var(--border); background: var(--panel-header);
   }
+  .tab-btn {
+    padding: 12px 18px; font-size: 13px; font-weight: 600; background: none; border: none;
+    color: var(--muted); border-bottom: 2px solid transparent; border-radius: 0; cursor: pointer;
+  }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: #111722; }
+  .tab-btn:hover:not(.active) { color: var(--text); }
+
+  .table-wrap {
+    max-height: 420px; overflow-y: auto; overflow-x: auto;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--border); }
+  th {
+    background: var(--panel-header); position: sticky; top: 0;
+    color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.04em; z-index: 2;
+  }
+  tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+  .sev { padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+  .sev-low { background: rgba(59,130,246,0.18); color: var(--low); border: 1px solid rgba(59,130,246,0.3); }
+  .sev-medium { background: rgba(245,158,11,0.18); color: var(--medium); border: 1px solid rgba(245,158,11,0.3); }
+  .sev-high { background: rgba(249,115,22,0.18); color: var(--high); border: 1px solid rgba(249,115,22,0.3); }
+  .sev-critical { background: rgba(239,68,68,0.22); color: var(--critical); border: 1px solid rgba(239,68,68,0.4); animation: alert-flash 1s infinite alternate; }
+
+  @keyframes alert-flash {
+    from { opacity: 0.8; }
+    to { opacity: 1; box-shadow: 0 0 6px var(--critical-glow); }
+  }
+
+  .proto-pill {
+    padding: 2px 7px; border-radius: 10px; font-size: 11px; font-family: ui-monospace, monospace; font-weight: 600;
+  }
+  .proto-tcp { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+  .proto-udp { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+  .proto-dns { background: rgba(168, 85, 247, 0.25); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.4); }
+  .proto-http { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
+  .proto-icmp { background: rgba(244, 63, 94, 0.2); color: #fb7185; }
+
+  .mitre-badge {
+    background: #192333; color: #94a3b8; border: 1px solid var(--border);
+    padding: 2px 6px; border-radius: 4px; font-family: ui-monospace, monospace; font-size: 11px;
+  }
+  .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 32px 0; }
+  .err { color: var(--critical); font-size: 12px; margin-top: 8px; }
+  .mono { font-family: ui-monospace, monospace; }
 </style>
 </head>
 <body>
 <header>
-  <h1>NDAP</h1>
-  <span>Network Detection & Analysis Platform</span>
+  <div class="brand">
+    <div class="logo">N</div>
+    <div>
+      <h1>NDAP</h1>
+      <div class="subtitle">Network Detection & Analysis Platform · Real-time SOC Dashboard</div>
+    </div>
+  </div>
+  <div class="ws-status">
+    <span class="ws-dot" id="wsDot"></span>
+    <span id="wsText">Connecting WebSocket…</span>
+  </div>
 </header>
+
 <main>
-  <div class="panel">
-    <div class="row">
-      <input id="pcapPath" type="text" placeholder="/path/to/traffic.pcap" />
-      <button id="analyzeBtn" onclick="runAnalyze()">Analyze</button>
+  <!-- KPI Metrics -->
+  <div class="grid-stats">
+    <div class="stat-card">
+      <div class="val" id="statPackets" style="color:var(--accent);">0</div>
+      <div class="lbl">Packets Streamed</div>
     </div>
-    <div class="err" id="errBox" style="display:none"></div>
+    <div class="stat-card">
+      <div class="val" id="statConvs" style="color:#a78bfa;">0</div>
+      <div class="lbl">Active Conversations</div>
+    </div>
+    <div class="stat-card">
+      <div class="val" id="statAlerts" style="color:var(--critical);">0</div>
+      <div class="lbl">Threat Alerts</div>
+    </div>
+    <div class="stat-card">
+      <div class="val" id="statIocs" style="color:var(--green);">0</div>
+      <div class="lbl">Threat Intel Indicators</div>
+    </div>
   </div>
 
+  <!-- Capture & Feed Controls -->
   <div class="panel">
-    <div class="stats">
-      <div class="stat"><div class="n" id="statPackets">—</div><div class="l">Packets</div></div>
-      <div class="stat"><div class="n" id="statConversations">—</div><div class="l">Conversations</div></div>
-      <div class="stat"><div class="n" id="statAlerts">—</div><div class="l">Alerts</div></div>
+    <div class="panel-head">
+      <span class="panel-title">Packet Capture & Live Stream Controls</span>
+      <span id="captureStatusText" style="font-size:12px; color:var(--muted);">Stream Idle</span>
     </div>
-    <div id="protoWrap" style="display:none; margin-top: 16px; border-top: 1px solid var(--border); padding-top: 14px;">
-      <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Protocols Identified</div>
-      <div class="row" id="protoBadges" style="gap: 8px;"></div>
+    <div class="panel-body">
+      <div class="controls-row">
+        <input id="pcapPath" type="text" placeholder="PCAP path (leave blank for realistic synthetic traffic generator)" />
+        <button id="btnStartLive" class="btn-success" onclick="startLiveCapture()">
+          ▶ Start Live Feed
+        </button>
+        <button id="btnStopLive" class="btn-danger" onclick="stopLiveCapture()" disabled>
+          ⏹ Stop Live Feed
+        </button>
+        <button id="btnAnalyze" class="btn-primary" onclick="runAnalyze()">
+          ⚡ Batch Analyze PCAP
+        </button>
+      </div>
+      <div class="err" id="errBox" style="display:none"></div>
     </div>
   </div>
 
+  <!-- Main View Tabs -->
   <div class="panel">
-    <table>
-      <thead>
-        <tr><th>Time</th><th>Severity</th><th>Rule</th><th>MITRE</th><th>Detail</th></tr>
-      </thead>
-      <tbody id="alertBody"></tbody>
-    </table>
-    <div class="empty" id="emptyMsg">Run an analysis to see alerts here.</div>
+    <div class="tabs">
+      <button class="tab-btn active" id="tabPacketsBtn" onclick="switchTab('packets')">
+        Live Packet Stream (<span id="tabPacketCount">0</span>)
+      </button>
+      <button class="tab-btn" id="tabAlertsBtn" onclick="switchTab('alerts')">
+        Threat Detections (<span id="tabAlertCount">0</span>)
+      </button>
+      <button class="tab-btn" id="tabIntelBtn" onclick="switchTab('intel')">
+        Automated Threat Intel (<span id="tabSourceCount">0</span> Feeds)
+      </button>
+    </div>
+
+    <!-- Packet Stream Table -->
+    <div id="tabPackets" class="panel-body" style="padding:0;">
+      <div style="padding: 10px 18px; display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border);">
+        <span style="font-size:12px; color:var(--muted);">Real-time packet feed with layer 7 application dissectors</span>
+        <label style="font-size:12px; color:var(--muted); cursor:pointer;">
+          <input type="checkbox" id="chkAutoScroll" checked /> Autoscroll to latest
+        </label>
+      </div>
+      <div class="table-wrap" id="packetTableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:90px;">Time</th>
+              <th style="width:70px;">Proto</th>
+              <th style="width:180px;">Source</th>
+              <th style="width:180px;">Destination</th>
+              <th style="width:70px;">Len</th>
+              <th>Protocol Dissection / Summary</th>
+            </tr>
+          </thead>
+          <tbody id="packetBody"></tbody>
+        </table>
+        <div class="empty" id="packetEmpty">No live packets received. Click "Start Live Feed" to stream.</div>
+      </div>
+    </div>
+
+    <!-- Threat Alerts Table -->
+    <div id="tabAlerts" class="panel-body" style="display:none; padding:0;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:90px;">Time</th>
+              <th style="width:90px;">Severity</th>
+              <th style="width:160px;">Rule</th>
+              <th style="width:180px;">MITRE ATT&CK</th>
+              <th>Threat Intelligence & Diagnostic Details</th>
+            </tr>
+          </thead>
+          <tbody id="alertBody"></tbody>
+        </table>
+        <div class="empty" id="alertEmpty">No threat detection alerts triggered yet.</div>
+      </div>
+    </div>
+
+    <!-- Threat Intel Panel -->
+    <div id="tabIntel" class="panel-body" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px;">
+        <div>
+          <strong style="font-size:13px;">Automated Remote Threat Intelligence Sync</strong>
+          <div style="font-size:12px; color:var(--muted);">Background synchronizer automatically pulls IOC indicators from remote feeds and local feeds</div>
+        </div>
+        <button class="btn-primary" onclick="syncThreatIntel()">🔄 Sync Feeds Now</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Feed Name</th>
+              <th>Feed URL / Source</th>
+              <th>Interval</th>
+              <th>Last Synced</th>
+              <th>Indicators Loaded</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="intelBody"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </main>
 
 <script>
-async function runAnalyze() {
-  const path = document.getElementById('pcapPath').value.trim();
-  const btn = document.getElementById('analyzeBtn');
+let ws = null;
+let currentTab = 'packets';
+let totalPackets = 0;
+let totalAlerts = 0;
+const MAX_PACKET_ROWS = 200;
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tabPackets').style.display = tab === 'packets' ? 'block' : 'none';
+  document.getElementById('tabAlerts').style.display = tab === 'alerts' ? 'block' : 'none';
+  document.getElementById('tabIntel').style.display = tab === 'intel' ? 'block' : 'none';
+
+  document.getElementById('tabPacketsBtn').className = 'tab-btn' + (tab === 'packets' ? ' active' : '');
+  document.getElementById('tabAlertsBtn').className = 'tab-btn' + (tab === 'alerts' ? ' active' : '');
+  document.getElementById('tabIntelBtn').className = 'tab-btn' + (tab === 'intel' ? ' active' : '');
+
+  if (tab === 'intel') refreshIntelSources();
+}
+
+// ---------------------------------------------------------------------
+// WebSocket Live Connection
+// ---------------------------------------------------------------------
+
+function connectWebSocket() {
+  const wsDot = document.getElementById('wsDot');
+  const wsText = document.getElementById('wsText');
+  const loc = window.location;
+  const wsProtocol = loc.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${wsProtocol}//${loc.host}/ws/live`;
+
+  ws = new WebSocket(wsUrl);
+
+  ws.onopen = () => {
+    wsDot.className = 'ws-dot live';
+    wsText.textContent = 'WebSocket: Connected (Live)';
+  };
+
+  ws.onmessage = (evt) => {
+    try {
+      const msg = JSON.parse(evt.data);
+      handleLiveEvent(msg);
+    } catch (e) {
+      console.error('Failed to parse WebSocket event:', e);
+    }
+  };
+
+  ws.onclose = () => {
+    wsDot.className = 'ws-dot error';
+    wsText.textContent = 'WebSocket: Disconnected (reconnecting…)';
+    setTimeout(connectWebSocket, 2000);
+  };
+
+  ws.onerror = () => {
+    ws.close();
+  };
+}
+
+function handleLiveEvent(evt) {
+  if (evt.type === 'packet') {
+    appendPacketRow(evt);
+  } else if (evt.type === 'alert') {
+    appendAlertRow(evt);
+  } else if (evt.type === 'stats') {
+    updateStats(evt);
+  } else if (evt.type === 'status') {
+    document.getElementById('captureStatusText').textContent = evt.message;
+    document.getElementById('btnStartLive').disabled = evt.capturing;
+    document.getElementById('btnStopLive').disabled = !evt.capturing;
+  }
+}
+
+function appendPacketRow(pkt) {
+  totalPackets++;
+  document.getElementById('statPackets').textContent = totalPackets;
+  document.getElementById('tabPacketCount').textContent = totalPackets;
+
+  const empty = document.getElementById('packetEmpty');
+  if (empty) empty.style.display = 'none';
+
+  const body = document.getElementById('packetBody');
+  const tr = document.createElement('tr');
+
+  const protoClass = 'proto-' + pkt.proto.toLowerCase();
+  tr.innerHTML = `
+    <td class="mono" style="color:var(--muted);">${pkt.ts_sec}</td>
+    <td><span class="proto-pill ${protoClass}">${pkt.proto}</span></td>
+    <td class="mono">${pkt.src}</td>
+    <td class="mono">${pkt.dst}</td>
+    <td class="mono" style="color:var(--muted);">${pkt.len} B</td>
+    <td style="color:${pkt.summary.includes('C2') || pkt.summary.includes('tunnel') ? 'var(--critical)' : 'var(--text)'};">
+      ${pkt.summary}
+    </td>
+  `;
+
+  body.appendChild(tr);
+
+  // Prune rows if exceeding threshold
+  if (body.children.length > MAX_PACKET_ROWS) {
+    body.removeChild(body.firstChild);
+  }
+
+  if (document.getElementById('chkAutoScroll').checked) {
+    const wrap = document.getElementById('packetTableWrap');
+    wrap.scrollTop = wrap.scrollHeight;
+  }
+}
+
+function appendAlertRow(alt) {
+  totalAlerts++;
+  document.getElementById('statAlerts').textContent = totalAlerts;
+  document.getElementById('tabAlertCount').textContent = totalAlerts;
+
+  const empty = document.getElementById('alertEmpty');
+  if (empty) empty.style.display = 'none';
+
+  const body = document.getElementById('alertBody');
+  const tr = document.createElement('tr');
+
+  const sevClass = 'sev-' + alt.severity.toLowerCase();
+  const mitreText = alt.mitre_id ? `<span class="mitre-badge">${alt.mitre_id}</span> ${alt.mitre_name || ''}` : '—';
+
+  tr.innerHTML = `
+    <td class="mono" style="color:var(--muted);">${alt.ts_sec}</td>
+    <td><span class="sev ${sevClass}">${alt.severity}</span></td>
+    <td style="font-weight:600;">${alt.rule}</td>
+    <td>${mitreText}</td>
+    <td>${alt.message}</td>
+  `;
+
+  // Prepend new alerts at top
+  body.insertBefore(tr, body.firstChild);
+}
+
+function updateStats(stats) {
+  if (stats.packets) document.getElementById('statPackets').textContent = stats.packets;
+  if (stats.conversations) document.getElementById('statConvs').textContent = stats.conversations;
+  if (stats.alerts !== undefined) document.getElementById('statAlerts').textContent = stats.alerts;
+}
+
+// ---------------------------------------------------------------------
+// Capture Start / Stop Actions
+// ---------------------------------------------------------------------
+
+async function startLiveCapture() {
+  const pcap = document.getElementById('pcapPath').value.trim();
   const errBox = document.getElementById('errBox');
   errBox.style.display = 'none';
-  if (!path) { return; }
+
+  try {
+    const res = await fetch('/capture/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        path: pcap ? pcap : null,
+        interval_ms: 100,
+      }),
+    });
+    const data = await res.json();
+    if (data.status === 'started' || data.status === 'already_running') {
+      document.getElementById('btnStartLive').disabled = true;
+      document.getElementById('btnStopLive').disabled = false;
+      document.getElementById('captureStatusText').textContent = 'Live Capture Running';
+    }
+  } catch (e) {
+    errBox.textContent = 'Failed to start capture: ' + e.message;
+    errBox.style.display = 'block';
+  }
+}
+
+async function stopLiveCapture() {
+  try {
+    await fetch('/capture/stop', { method: 'POST' });
+    document.getElementById('btnStartLive').disabled = false;
+    document.getElementById('btnStopLive').disabled = true;
+    document.getElementById('captureStatusText').textContent = 'Capture Stopped';
+  } catch (e) {
+    console.error('Failed to stop capture:', e);
+  }
+}
+
+// ---------------------------------------------------------------------
+// Batch Analyze PCAP Action
+// ---------------------------------------------------------------------
+
+async function runAnalyze() {
+  const path = document.getElementById('pcapPath').value.trim();
+  const btn = document.getElementById('btnAnalyze');
+  const errBox = document.getElementById('errBox');
+  errBox.style.display = 'none';
+  if (!path) {
+    errBox.textContent = 'Please enter a PCAP path for batch analysis (or click "Start Live Feed" for synthetic streaming).';
+    errBox.style.display = 'block';
+    return;
+  }
 
   btn.disabled = true;
   btn.textContent = 'Analyzing…';
@@ -143,64 +543,87 @@ async function runAnalyze() {
     });
     if (!res.ok) throw new Error('server returned ' + res.status);
     const data = await res.json();
-    render(data);
+    document.getElementById('statPackets').textContent = data.packets;
+    document.getElementById('statConvs').textContent = data.conversations;
+    document.getElementById('statAlerts').textContent = data.alerts.length;
+    document.getElementById('tabAlertCount').textContent = data.alerts.length;
+
+    // Render alerts
+    const body = document.getElementById('alertBody');
+    const empty = document.getElementById('alertEmpty');
+    body.innerHTML = '';
+    if (data.alerts.length === 0) {
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      for (const a of data.alerts) {
+        appendAlertRow(a);
+      }
+    }
+    switchTab('alerts');
   } catch (e) {
     errBox.textContent = 'Request failed: ' + e.message;
     errBox.style.display = 'block';
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Analyze';
+    btn.textContent = '⚡ Batch Analyze PCAP';
   }
 }
 
-function render(data) {
-  document.getElementById('statPackets').textContent = data.packets;
-  document.getElementById('statConversations').textContent = data.conversations;
-  document.getElementById('statAlerts').textContent = data.alerts.length;
+// ---------------------------------------------------------------------
+// Threat Intel Feeds Management
+// ---------------------------------------------------------------------
 
-  const protoWrap = document.getElementById('protoWrap');
-  const protoBadges = document.getElementById('protoBadges');
-  if (data.protocols && Object.keys(data.protocols).length > 0) {
-    protoBadges.innerHTML = '';
-    for (const [proto, count] of Object.entries(data.protocols)) {
-      const badge = document.createElement('span');
-      badge.className = 'proto-badge';
-      badge.textContent = `${proto}: ${count}`;
-      protoBadges.appendChild(badge);
+async function refreshIntelSources() {
+  try {
+    const [resSources, resStats] = await Promise.all([
+      fetch('/intel/sources'),
+      fetch('/intel/stats'),
+    ]);
+    const sources = await resSources.json();
+    const stats = await resStats.json();
+
+    document.getElementById('statIocs').textContent = stats.total || 0;
+    document.getElementById('tabSourceCount').textContent = sources.length;
+
+    const body = document.getElementById('intelBody');
+    body.innerHTML = '';
+
+    for (const s of sources) {
+      const tr = document.createElement('tr');
+      const lastSync = s.last_sync_time ? new Date(s.last_sync_time * 1000).toLocaleTimeString() : 'Never';
+      const statusPill = s.last_error
+        ? `<span class="sev sev-critical" title="${s.last_error}">Error</span>`
+        : `<span class="sev sev-low">Active</span>`;
+
+      tr.innerHTML = `
+        <td style="font-weight:600;">${s.name}</td>
+        <td class="mono" style="color:var(--accent); font-size:11px;">${s.url}</td>
+        <td>${s.refresh_interval_secs}s</td>
+        <td>${lastSync}</td>
+        <td class="mono"><strong>${s.last_item_count}</strong> items</td>
+        <td>${statusPill}</td>
+      `;
+      body.appendChild(tr);
     }
-    protoWrap.style.display = 'block';
-  } else {
-    protoWrap.style.display = 'none';
-  }
-
-  const body = document.getElementById('alertBody');
-  const emptyMsg = document.getElementById('emptyMsg');
-  body.innerHTML = '';
-
-  if (data.alerts.length === 0) {
-    emptyMsg.style.display = 'block';
-    return;
-  }
-  emptyMsg.style.display = 'none';
-
-  for (const a of data.alerts) {
-    const tr = document.createElement('tr');
-    const sevClass = 'sev-' + a.severity.toLowerCase();
-    const mitre = a.mitre_id ? `${a.mitre_id} · ${a.mitre_name}` : '—';
-    tr.innerHTML = `
-      <td>${a.ts_sec}</td>
-      <td><span class="sev ${sevClass}">${a.severity}</span></td>
-      <td>${a.rule}</td>
-      <td class="mitre">${mitre}</td>
-      <td>${a.message}</td>
-    `;
-    body.appendChild(tr);
+  } catch (e) {
+    console.error('Failed to load intel sources:', e);
   }
 }
 
-document.getElementById('pcapPath').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') runAnalyze();
-});
+async function syncThreatIntel() {
+  try {
+    const res = await fetch('/intel/sync', { method: 'POST' });
+    const data = await res.json();
+    refreshIntelSources();
+  } catch (e) {
+    console.error('Failed to sync intel:', e);
+  }
+}
+
+// Initial bootstrap
+connectWebSocket();
+refreshIntelSources();
 </script>
 </body>
 </html>

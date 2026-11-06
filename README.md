@@ -5,7 +5,7 @@
 ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange?logo=rust)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Android-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Tests](https://img.shields.io/badge/Tests-17%2F17%20Passed-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-22%2F22%20Passed-brightgreen)
 ![Zero Deps Core](https://img.shields.io/badge/Core%20Deps-Zero-success)
 
 ---
@@ -148,6 +148,7 @@ All detection rules produce standardized alerts enriched with severity levels an
 | `arp_spoof` | Man-in-the-Middle | Critical | **T1557** | Detects multiple MAC addresses claiming a single IP address |
 | `dns_tunnel` | Command & Control / Exfiltration | High | **T1071.004** | Shannon entropy ($H \ge 3.6$) and query length ($\ge 50$) analysis |
 | `cleartext_credentials` | Credential Access | High | **T1552** | Sniffs unencrypted HTTP Basic Auth, query tokens, and body parameters |
+| `c2_beaconing` | Command & Control | Critical | **T1071** | Periodicity & jitter clustering ($\Delta t$, $\mu \ge 2.0s$, $CV = \frac{\sigma}{\mu} \le 0.30$) |
 
 ### 5. Out-of-Process Python Plugin SDK (`plugins/python-sdk`)
 Write community detection rules in Python without modifying the Rust core:
@@ -170,9 +171,15 @@ Executed safely by `PythonPluginRule` in `ndap-detect` over standard JSON-lines 
 
 ### 6. Threat Intelligence (`ndap-intel`)
 - **IOC Store**: In-memory hash set matching for IP addresses, domains, and SHA256 file hashes loadable from plain CSV or JSON feeds.
+- **Automated Remote Feed Sync (`IocSyncManager`)**: Multi-source synchronizer supporting HTTP(S) and file feeds (`file://`), scheduling periodic refreshes, tracking feed health/errors, and recording loaded metrics.
 - **Sigma-Lite**: Evaluates YAML field-value rules against event maps.
 - **YARA**: Real compilation and scanning against byte buffers via `yara-x`.
 - **MITRE Mapping**: Static and dynamic lookups mapping rule alerts to ATT&CK tactics and IDs.
+
+### 7. Real-Time WebSocket Streaming & Live Capture (`ndap-api`)
+- **WebSocket Streaming (`/ws/live`)**: High-throughput broadcast channel delivering real-time packet decodes, active flows, and detection alerts directly to connected browsers with zero polling.
+- **Capture Orchestration**: Start/stop controls via `/capture/start` and `/capture/stop` supporting live PCAP streaming as well as a synthetic traffic generator simulating realistic web, DNS, and C2 beaconing attacks.
+- **Threat Intel API**: Endpoints `/intel/sources`, `/intel/sync`, and `/intel/stats` for managing and refreshing threat intelligence feeds.
 
 ---
 
@@ -279,11 +286,12 @@ cargo test
 
 Verification output:
 ```text
+running 2 tests (ndap-api) ... ok
 running 9 tests (ndap-protocol) ... ok
-running 5 tests (ndap-detect) ... ok
-running 3 tests (ndap-intel) ... ok
+running 7 tests (ndap-detect) ... ok
+running 4 tests (ndap-intel) ... ok
 
-test result: ok. 17 passed; 0 failed; 0 ignored
+test result: ok. 22 passed; 0 failed; 0 ignored
 ```
 
 Linter verification:
@@ -299,12 +307,12 @@ cargo clippy --workspace -- -D warnings
 - [x] L7 Application Dissectors (DNS RFC 1035, HTTP/1.x RFC 7230)
 - [x] 5-tuple flow engine and TCP stream reassembly
 - [x] Detection rules (Port Scan, SYN Flood, ARP Spoof, DNS Tunneling, Cleartext Credentials)
+- [x] C2 Beaconing detection (periodicity and jitter clustering)
 - [x] MITRE ATT&CK integration
 - [x] Out-of-process Python plugin execution runner
 - [x] Web dashboard with protocol distribution breakdown
-- [ ] Live WebSocket streaming for real-time dashboard packet feeds
-- [ ] C2 Beaconing detection (periodicity and jitter clustering)
-- [ ] Automated remote IOC feed synchronization
+- [x] Live WebSocket streaming for real-time dashboard packet feeds
+- [x] Automated remote IOC feed synchronization
 
 ---
 

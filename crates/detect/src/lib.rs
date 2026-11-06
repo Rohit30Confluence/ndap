@@ -4,10 +4,12 @@
 //! a time by `DetectionEngine`, keeping whatever state it needs internally.
 //! Supports native Rust rules as well as out-of-process Python plugin rules.
 
+pub mod beaconing;
 pub mod cleartext_cred;
 pub mod dns_tunnel;
 pub mod python_plugin;
 
+pub use beaconing::BeaconingRule;
 pub use cleartext_cred::CleartextCredentialRule;
 pub use dns_tunnel::{shannon_entropy, DnsTunnelRule};
 pub use python_plugin::PythonPluginRule;
@@ -200,6 +202,7 @@ impl DetectionEngine {
         engine.register(Box::new(ArpSpoofRule::new()));
         engine.register(Box::new(DnsTunnelRule::default()));
         engine.register(Box::new(CleartextCredentialRule::default()));
+        engine.register(Box::new(BeaconingRule::default()));
         engine
     }
 

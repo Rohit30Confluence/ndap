@@ -1,0 +1,6 @@
+# NDAP Threat Intel - Known C2 Infrastructure Feed
+ip,198.51.100.44
+ip,203.0.113.88
+domain,c2-covert-channel.org
+domain,beacon-stage2.cobalt.internal
+hash,0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef

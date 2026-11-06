@@ -6,7 +6,10 @@ Threat intelligence and rule matching crate for NDAP.
 
 - **IOC Store (`IocStore`)**:
   - In-memory lookups for IP addresses, domain names, and SHA256 file hashes.
-  - Streaming feed loader parsing plain CSV (`type,value`) with comment stripping.
+  - Streaming feed loader parsing plain CSV (`type,value`) and JSON array formats.
+- **Automated Feed Synchronization (`IocSyncManager`)**:
+  - Multi-feed manager supporting remote HTTP/HTTPS feeds and local `file://` sources.
+  - Interval-based synchronization scheduling with error tracking, item counts, and status reporting.
 - **Sigma-Lite Rule Evaluator**:
   - Compact field=value evaluator matching packet/event attributes against Sigma-style rules without heavy external YAML engines.
 - **YARA Pattern Matching**:
