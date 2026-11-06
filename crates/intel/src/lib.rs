@@ -110,21 +110,21 @@ impl IocStore {
             let value = match parts.next() {
                 Some(v) => v.trim(),
                 None => {
-                    return Err(format!("line {}: expected `type,value`, got `{line}`", lineno + 1))
+                    return Err(format!("line {}: invalid CSV format, expected `type,value`", lineno + 1))
                 }
             };
             match kind {
                 "ip" => {
                     let ip: IpAddr = value
                         .parse()
-                        .map_err(|_| format!("line {}: invalid IP `{value}`", lineno + 1))?;
+                        .map_err(|_| format!("line {}: invalid IP format", lineno + 1))?;
                     self.add(Ioc::Ip(ip));
                 }
                 "domain" => self.add(Ioc::Domain(value.to_string())),
                 "hash" => self.add(Ioc::FileHash(value.to_string())),
-                other => {
+                _ => {
                     return Err(format!(
-                        "line {}: unknown IOC type `{other}` (expected ip, domain, or hash)",
+                        "line {}: unknown IOC type (expected ip, domain, or hash)",
                         lineno + 1
                     ))
                 }
@@ -252,24 +252,27 @@ impl IocSyncManager {
             .collect()
     }
 
-    /// Fetches IOC feed content from a URL (`file://`, `http://`, `https://`, or local path).
+    /// Fetches IOC feed content from a remote URL (strictly restricted to `http://` and `https://`).
     pub fn fetch_url(url: &str) -> Result<String, String> {
-        if let Some(path) = url.strip_prefix("file://") {
-            return fs::read_to_string(path).map_err(|e| format!("reading {path}: {e}"));
+        let trimmed = url.trim();
+        if !trimmed.starts_with("http://") && !trimmed.starts_with("https://") {
+            return Err("rejected URL scheme: only http:// and https:// feeds are permitted".to_string());
         }
-        if url.starts_with("http://") || url.starts_with("https://") {
-            let output = std::process::Command::new("curl")
-                .args(["-sSL", "--max-time", "15", url])
-                .output()
-                .map_err(|e| format!("executing curl for {url}: {e}"))?;
-            if !output.status.success() {
-                return Err(format!("curl request to {url} failed with exit status {:?}", output.status.code()));
-            }
-            return String::from_utf8(output.stdout)
-                .map_err(|e| format!("invalid UTF-8 in response from {url}: {e}"));
+        if trimmed.starts_with('-') {
+            return Err("invalid URL: argument injection attempt detected".to_string());
         }
-        // Fallback to local file path
-        fs::read_to_string(url).map_err(|e| format!("reading file {url}: {e}"))
+
+        let output = std::process::Command::new("curl")
+            .args(["-sSL", "--max-time", "15", "--", trimmed])
+            .output()
+            .map_err(|_| "failed to execute HTTP fetcher process".to_string())?;
+
+        if !output.status.success() {
+            return Err(format!("fetch request failed with exit status {:?}", output.status.code()));
+        }
+
+        String::from_utf8(output.stdout)
+            .map_err(|_| "feed content contains invalid UTF-8 data".to_string())
     }
 
     /// Fetches and synchronizes a specific named feed source.
@@ -389,71 +392,6 @@ impl YaraScanner {
                 namespace: r.namespace().to_string(),
             })
             .collect()
-    }
-
-    /// Fetches IOC feed content from a URL (`file://`, `http://`, `https://`, or local path).
-    pub fn fetch_url(url: &str) -> Result<String, String> {
-        if let Some(path) = url.strip_prefix("file://") {
-            return fs::read_to_string(path).map_err(|e| format!("reading {path}: {e}"));
-        }
-        if url.starts_with("http://") || url.starts_with("https://") {
-            let output = std::process::Command::new("curl")
-                .args(["-sSL", "--max-time", "15", url])
-                .output()
-                .map_err(|e| format!("executing curl for {url}: {e}"))?;
-            if !output.status.success() {
-                return Err(format!("curl request to {url} failed with exit status {:?}", output.status.code()));
-            }
-            return String::from_utf8(output.stdout)
-                .map_err(|e| format!("invalid UTF-8 in response from {url}: {e}"));
-        }
-        // Fallback to local file path
-        fs::read_to_string(url).map_err(|e| format!("reading file {url}: {e}"))
-    }
-
-    /// Fetches and synchronizes a specific named feed source.
-    pub fn sync_source(&self, name: &str, now_ts: u64) -> Result<usize, String> {
-        let source = {
-            let sources = self.sources.read().map_err(|_| "failed to read sources".to_string())?;
-            sources.iter().find(|s| s.name == name).cloned()
-        };
-
-        let Some(source) = source else {
-            return Err(format!("feed source '{name}' not found"));
-        };
-
-        match Self::fetch_url(&source.url) {
-            Ok(content) => {
-                let res = self.sync_source_data(name, &content, now_ts);
-                if let Err(ref e) = res {
-                    if let Ok(mut sources) = self.sources.write() {
-                        if let Some(s) = sources.iter_mut().find(|s| s.name == name) {
-                            s.last_error = Some(e.clone());
-                        }
-                    }
-                }
-                res
-            }
-            Err(e) => {
-                if let Ok(mut sources) = self.sources.write() {
-                    if let Some(s) = sources.iter_mut().find(|s| s.name == name) {
-                        s.last_error = Some(e.clone());
-                    }
-                }
-                Err(e)
-            }
-        }
-    }
-
-    /// Automatically synchronizes all sources that are currently due for refresh.
-    pub fn sync_all_due(&self, now_ts: u64) -> Vec<(String, Result<usize, String>)> {
-        let due = self.sources_due_for_sync(now_ts);
-        let mut results = Vec::new();
-        for src in due {
-            let res = self.sync_source(&src.name, now_ts);
-            results.push((src.name, res));
-        }
-        results
     }
 }
 
@@ -678,30 +616,20 @@ mod tests {
         let due = sync_mgr.sources_due_for_sync(5000); // 4000s elapsed >= 3600s
         assert_eq!(due.len(), 1);
 
-        // Test file:// sync and sync_all_due
-        let temp_dir = std::env::temp_dir();
-        let feed_file = temp_dir.join("test_feed.csv");
-        std::fs::write(&feed_file, "ip,203.0.113.42\ndomain,evil-c2.com\n").unwrap();
+        // Verify URL restriction & argument injection defense
+        assert!(IocSyncManager::fetch_url("file:///etc/passwd").is_err());
+        assert!(IocSyncManager::fetch_url("/etc/shadow").is_err());
+        assert!(IocSyncManager::fetch_url("-o /tmp/evil").is_err());
+        assert!(IocSyncManager::fetch_url("ftp://malicious.org").is_err());
 
-        let file_source = IocFeedSource {
-            name: "local_threat_feed".into(),
-            url: format!("file://{}", feed_file.display()),
-            enabled: true,
-            refresh_interval_secs: 60,
-            last_sync_time: None,
-            last_item_count: 0,
-            last_error: None,
-        };
-        sync_mgr.add_source(file_source);
-
-        let results = sync_mgr.sync_all_due(5000);
-        let local_res = results.iter().find(|(name, _)| name == "local_threat_feed").unwrap();
-        assert_eq!(local_res.1.as_ref().unwrap(), &2);
+        // Test direct synchronization via sync_source_data
+        let csv_feed = "ip,203.0.113.42\ndomain,evil-c2.com\n";
+        let loaded = sync_mgr.sync_source_data("otx_alienvault", csv_feed, 6000).unwrap();
+        assert_eq!(loaded, 2);
 
         let store_guard = store.read().unwrap();
         assert!(store_guard.matches_ip(&"203.0.113.42".parse().unwrap()));
         assert!(store_guard.matches_domain("evil-c2.com"));
-        let _ = std::fs::remove_file(feed_file);
     }
 
     #[test]

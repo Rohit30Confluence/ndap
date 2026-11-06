@@ -17,6 +17,8 @@ pub struct RawPacket {
     pub data: Vec<u8>,
 }
 
+pub const MAX_SNAPLEN: u32 = 65535;
+
 pub struct PcapReader {
     file: File,
     swap_endian: bool,
@@ -82,6 +84,10 @@ impl PcapReader {
         }
         let captured_len = self.read_u32()?;
         let original_len = self.read_u32()?;
+
+        if captured_len > MAX_SNAPLEN {
+            return Err(CaptureError::Truncated);
+        }
 
         let mut data = vec![0u8; captured_len as usize];
         self.file
@@ -214,5 +220,42 @@ impl LiveCapture for PcapLiveCapture {
             Err(pcap::Error::TimeoutExpired) => Ok(None),
             Err(e) => Err(CaptureError::Io(io::Error::other(e.to_string()))),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+
+    #[test]
+    fn test_pcap_oversized_captured_len_rejected() {
+        let temp_dir = std::env::temp_dir();
+        let pcap_file = temp_dir.join("test_oversized.pcap");
+
+        let mut file = std::fs::File::create(&pcap_file).unwrap();
+        // 24-byte PCAP header (standard usec LE magic: 0xA1B2C3D4)
+        let mut hdr = [0u8; 24];
+        hdr[0..4].copy_from_slice(&0xA1B2C3D4u32.to_le_bytes());
+        hdr[4..6].copy_from_slice(&2u16.to_le_bytes()); // major 2
+        hdr[6..8].copy_from_slice(&4u16.to_le_bytes()); // minor 4
+        hdr[16..20].copy_from_slice(&65535u32.to_le_bytes()); // snaplen
+        hdr[20..24].copy_from_slice(&1u32.to_le_bytes()); // linktype Ethernet
+        file.write_all(&hdr).unwrap();
+
+        // 16-byte Packet header with oversized captured_len = 70000 > MAX_SNAPLEN
+        let mut pkt_hdr = [0u8; 16];
+        pkt_hdr[0..4].copy_from_slice(&100u32.to_le_bytes()); // ts_sec
+        pkt_hdr[4..8].copy_from_slice(&0u32.to_le_bytes()); // ts_usec
+        pkt_hdr[8..12].copy_from_slice(&70000u32.to_le_bytes()); // captured_len > 65535!
+        pkt_hdr[12..16].copy_from_slice(&70000u32.to_le_bytes()); // original_len
+        file.write_all(&pkt_hdr).unwrap();
+        drop(file);
+
+        let mut reader = PcapReader::open(pcap_file.to_str().unwrap()).unwrap();
+        let res = reader.next_packet();
+        assert!(matches!(res, Err(CaptureError::Truncated)));
+
+        let _ = std::fs::remove_file(pcap_file);
     }
 }

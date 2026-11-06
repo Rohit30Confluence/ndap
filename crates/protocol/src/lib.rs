@@ -98,6 +98,7 @@ impl DecodedPacket {
 #[derive(Debug, PartialEq, Eq)]
 pub enum DecodeError {
     TooShort(&'static str),
+    Malformed(&'static str),
 }
 
 pub fn decode_ethernet(data: &[u8]) -> Result<(EthernetFrame, &[u8]), DecodeError> {
@@ -117,17 +118,24 @@ pub fn decode_ipv4(data: &[u8]) -> Result<(Ipv4Header, &[u8]), DecodeError> {
         return Err(DecodeError::TooShort("ipv4"));
     }
     let ihl = (data[0] & 0x0F) as usize * 4;
+    if ihl < 20 {
+        return Err(DecodeError::Malformed("ipv4 ihl < 20"));
+    }
     if data.len() < ihl {
         return Err(DecodeError::TooShort("ipv4 options"));
     }
-    let total_len = u16::from_be_bytes([data[2], data[3]]);
+    let total_len = u16::from_be_bytes([data[2], data[3]]) as usize;
+    if total_len < ihl {
+        return Err(DecodeError::Malformed("ipv4 total_len < ihl"));
+    }
+    let payload_end = total_len.min(data.len());
     let ttl = data[8];
     let protocol = data[9];
     let src = Ipv4Addr::new(data[12], data[13], data[14], data[15]);
     let dst = Ipv4Addr::new(data[16], data[17], data[18], data[19]);
     Ok((
-        Ipv4Header { src, dst, protocol, ttl, total_len },
-        &data[ihl..],
+        Ipv4Header { src, dst, protocol, ttl, total_len: total_len as u16 },
+        &data[ihl..payload_end],
     ))
 }
 
@@ -150,6 +158,9 @@ pub fn decode_tcp(data: &[u8]) -> Result<(TcpHeader, &[u8]), DecodeError> {
     let seq = u32::from_be_bytes([data[4], data[5], data[6], data[7]]);
     let ack = u32::from_be_bytes([data[8], data[9], data[10], data[11]]);
     let data_offset = ((data[12] >> 4) & 0x0F) as usize * 4;
+    if data_offset < 20 {
+        return Err(DecodeError::Malformed("tcp data_offset < 20"));
+    }
     let flags = data[13];
     let window = u16::from_be_bytes([data[14], data[15]]);
     if data.len() < data_offset {
@@ -371,5 +382,34 @@ mod tests {
         assert_eq!(dissection.get_field("icmp.type_name"), Some("Echo Request"));
         assert_eq!(dissection.get_field("icmp.id"), Some("17185")); // 0x4321 = 17185
         assert_eq!(dissection.get_field("icmp.seq"), Some("2"));
+    }
+
+    #[test]
+    fn test_wire_decoding_overlap_and_bounds() {
+        // Test IPv4 with invalid IHL < 20 (e.g. 0x44 -> IHL = 16)
+        let bad_ip = vec![
+            0x44, 0x00, 0x00, 0x20, 0x00, 0x01, 0x00, 0x00, 0x40, 0x06, 0x00, 0x00,
+            10, 0, 0, 1, 10, 0, 0, 2, 0, 0, 0, 0,
+        ];
+        assert!(matches!(decode_ipv4(&bad_ip), Err(DecodeError::Malformed(_))));
+
+        // Test IPv4 total_len clamping (Ethernet padding removal)
+        // total_len = 24 (20-byte IP header + 4-byte payload), but buffer has 34 bytes (10 bytes padding)
+        let padded_ip = vec![
+            0x45, 0x00, 0x00, 0x18, 0x00, 0x01, 0x00, 0x00, 0x40, 0x11, 0x00, 0x00,
+            10, 0, 0, 1, 10, 0, 0, 2,
+            0xaa, 0xbb, 0xcc, 0xdd, // 4-byte payload
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 10-byte padding
+        ];
+        let (hdr, payload) = decode_ipv4(&padded_ip).unwrap();
+        assert_eq!(hdr.total_len, 24);
+        assert_eq!(payload, &[0xaa, 0xbb, 0xcc, 0xdd]); // Padding cleanly stripped!
+
+        // Test TCP with invalid data_offset < 20 (e.g. offset = 16 -> 0x40)
+        let bad_tcp = vec![
+            0x12, 0x34, 0x00, 0x50, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+            0x40, 0x02, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00,
+        ];
+        assert!(matches!(decode_tcp(&bad_tcp), Err(DecodeError::Malformed(_))));
     }
 }

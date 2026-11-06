@@ -5,7 +5,7 @@
 ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange?logo=rust)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Android-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Tests](https://img.shields.io/badge/Tests-22%2F22%20Passed-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-25%2F25%20Passed-brightgreen)
 ![Zero Deps Core](https://img.shields.io/badge/Core%20Deps-Zero-success)
 
 ---
@@ -287,11 +287,12 @@ cargo test
 Verification output:
 ```text
 running 2 tests (ndap-api) ... ok
-running 9 tests (ndap-protocol) ... ok
-running 7 tests (ndap-detect) ... ok
+running 1 test (ndap-capture) ... ok
+running 10 tests (ndap-protocol) ... ok
+running 8 tests (ndap-detect) ... ok
 running 4 tests (ndap-intel) ... ok
 
-test result: ok. 22 passed; 0 failed; 0 ignored
+test result: ok. 25 passed; 0 failed; 0 ignored
 ```
 
 Linter verification:

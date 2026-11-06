@@ -344,6 +344,17 @@ let totalPackets = 0;
 let totalAlerts = 0;
 const MAX_PACKET_ROWS = 200;
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/[&<>"']/g, m => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  })[m]);
+}
+
 function switchTab(tab) {
   currentTab = tab;
   document.getElementById('tabPackets').style.display = tab === 'packets' ? 'block' : 'none';
@@ -420,16 +431,17 @@ function appendPacketRow(pkt) {
   const body = document.getElementById('packetBody');
   const tr = document.createElement('tr');
 
-  const protoClass = 'proto-' + pkt.proto.toLowerCase();
+  const protoClass = 'proto-' + escapeHtml(pkt.proto).toLowerCase();
+  const isSuspicious = pkt.summary && (pkt.summary.includes('C2') || pkt.summary.includes('tunnel'));
+  const summaryColor = isSuspicious ? 'var(--critical)' : 'var(--text)';
+
   tr.innerHTML = `
-    <td class="mono" style="color:var(--muted);">${pkt.ts_sec}</td>
-    <td><span class="proto-pill ${protoClass}">${pkt.proto}</span></td>
-    <td class="mono">${pkt.src}</td>
-    <td class="mono">${pkt.dst}</td>
-    <td class="mono" style="color:var(--muted);">${pkt.len} B</td>
-    <td style="color:${pkt.summary.includes('C2') || pkt.summary.includes('tunnel') ? 'var(--critical)' : 'var(--text)'};">
-      ${pkt.summary}
-    </td>
+    <td class="mono" style="color:var(--muted);">${escapeHtml(pkt.ts_sec)}</td>
+    <td><span class="proto-pill ${protoClass}">${escapeHtml(pkt.proto)}</span></td>
+    <td class="mono">${escapeHtml(pkt.src)}</td>
+    <td class="mono">${escapeHtml(pkt.dst)}</td>
+    <td class="mono" style="color:var(--muted);">${escapeHtml(pkt.len)} B</td>
+    <td style="color:${summaryColor};">${escapeHtml(pkt.summary)}</td>
   `;
 
   body.appendChild(tr);
@@ -456,15 +468,17 @@ function appendAlertRow(alt) {
   const body = document.getElementById('alertBody');
   const tr = document.createElement('tr');
 
-  const sevClass = 'sev-' + alt.severity.toLowerCase();
-  const mitreText = alt.mitre_id ? `<span class="mitre-badge">${alt.mitre_id}</span> ${alt.mitre_name || ''}` : '—';
+  const sevClass = 'sev-' + escapeHtml(alt.severity).toLowerCase();
+  const mitreText = alt.mitre_id
+    ? `<span class="mitre-badge">${escapeHtml(alt.mitre_id)}</span> ${escapeHtml(alt.mitre_name || '')}`
+    : '—';
 
   tr.innerHTML = `
-    <td class="mono" style="color:var(--muted);">${alt.ts_sec}</td>
-    <td><span class="sev ${sevClass}">${alt.severity}</span></td>
-    <td style="font-weight:600;">${alt.rule}</td>
+    <td class="mono" style="color:var(--muted);">${escapeHtml(alt.ts_sec)}</td>
+    <td><span class="sev ${sevClass}">${escapeHtml(alt.severity)}</span></td>
+    <td style="font-weight:600;">${escapeHtml(alt.rule)}</td>
     <td>${mitreText}</td>
-    <td>${alt.message}</td>
+    <td>${escapeHtml(alt.message)}</td>
   `;
 
   // Prepend new alerts at top
@@ -593,15 +607,15 @@ async function refreshIntelSources() {
       const tr = document.createElement('tr');
       const lastSync = s.last_sync_time ? new Date(s.last_sync_time * 1000).toLocaleTimeString() : 'Never';
       const statusPill = s.last_error
-        ? `<span class="sev sev-critical" title="${s.last_error}">Error</span>`
+        ? `<span class="sev sev-critical" title="${escapeHtml(s.last_error)}">Error</span>`
         : `<span class="sev sev-low">Active</span>`;
 
       tr.innerHTML = `
-        <td style="font-weight:600;">${s.name}</td>
-        <td class="mono" style="color:var(--accent); font-size:11px;">${s.url}</td>
-        <td>${s.refresh_interval_secs}s</td>
-        <td>${lastSync}</td>
-        <td class="mono"><strong>${s.last_item_count}</strong> items</td>
+        <td style="font-weight:600;">${escapeHtml(s.name)}</td>
+        <td class="mono" style="color:var(--accent); font-size:11px;">${escapeHtml(s.url)}</td>
+        <td>${escapeHtml(s.refresh_interval_secs)}s</td>
+        <td>${escapeHtml(lastSync)}</td>
+        <td class="mono"><strong>${escapeHtml(s.last_item_count)}</strong> items</td>
         <td>${statusPill}</td>
       `;
       body.appendChild(tr);

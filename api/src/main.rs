@@ -140,13 +140,23 @@ fn packet_summary(decoded: &DecodedPacket, registry: &ProtocolRegistry) -> (Stri
                 }
             }
             "http" => {
-                if let (Some(m), Some(u)) = (
-                    dissection.get_field("http.request.method"),
-                    dissection.get_field("http.request.uri"),
-                ) {
+                if let Some(m) = dissection
+                    .get_field("http.method")
+                    .or_else(|| dissection.get_field("http.request.method"))
+                {
+                    let u = dissection
+                        .get_field("http.request_uri")
+                        .or_else(|| dissection.get_field("http.request.uri"))
+                        .unwrap_or("/");
                     format!("HTTP {} {}", m, u)
-                } else if let Some(sc) = dissection.get_field("http.response.code") {
-                    let reason = dissection.get_field("http.response.phrase").unwrap_or("");
+                } else if let Some(sc) = dissection
+                    .get_field("http.status_code")
+                    .or_else(|| dissection.get_field("http.response.code"))
+                {
+                    let reason = dissection
+                        .get_field("http.reason")
+                        .or_else(|| dissection.get_field("http.response.phrase"))
+                        .unwrap_or("");
                     format!("HTTP {} {}", sc, reason)
                 } else {
                     "HTTP Message".into()
@@ -639,9 +649,18 @@ async fn get_intel_sources(State(state): State<AppState>) -> Json<Vec<IocFeedSou
 async fn add_intel_source(
     State(state): State<AppState>,
     Json(source): Json<IocFeedSource>,
-) -> Json<serde_json::Value> {
+) -> Result<Json<serde_json::Value>, (axum::http::StatusCode, Json<serde_json::Value>)> {
+    if !source.url.starts_with("http://") && !source.url.starts_with("https://") {
+        return Err((
+            axum::http::StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({
+                "status": "error",
+                "message": "Only http:// and https:// feed URLs are permitted"
+            })),
+        ));
+    }
     state.ioc_mgr.add_source(source);
-    Json(serde_json::json!({ "status": "added" }))
+    Ok(Json(serde_json::json!({ "status": "added" })))
 }
 
 async fn sync_intel(State(state): State<AppState>) -> Json<serde_json::Value> {
@@ -689,7 +708,7 @@ async fn main() {
     // Register default Threat Intel Feeds
     ioc_mgr.add_source(IocFeedSource {
         name: "local_c2_feed".into(),
-        url: "file://crates/intel/feeds/c2_indicators.csv".into(),
+        url: "https://threat-intel.internal/c2_indicators.csv".into(),
         enabled: true,
         refresh_interval_secs: 60,
         last_sync_time: None,
@@ -706,12 +725,14 @@ async fn main() {
         last_error: None,
     });
 
-    // Initial sync of available local feeds
+    // Initial sync of bundled indicators
     let now_ts = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs();
-    let _ = ioc_mgr.sync_source("local_c2_feed", now_ts);
+    if let Ok(c2_data) = std::fs::read_to_string("crates/intel/feeds/c2_indicators.csv") {
+        let _ = ioc_mgr.sync_source_data("local_c2_feed", &c2_data, now_ts);
+    }
 
     let state = AppState {
         tx,
@@ -797,7 +818,7 @@ mod tests {
             State(state.clone()),
             Json(IocFeedSource {
                 name: "test_feed".into(),
-                url: "file://nonexistent.csv".into(),
+                url: "https://threats.internal/feed.csv".into(),
                 enabled: true,
                 refresh_interval_secs: 300,
                 last_sync_time: None,
@@ -806,6 +827,7 @@ mod tests {
             }),
         )
         .await
+        .unwrap()
         .0;
         assert_eq!(add_res["status"], "added");
 

@@ -58,18 +58,26 @@ impl DetectionRule for DnsTunnelRule {
     fn on_packet(&mut self, pkt: &DecodedPacket, ts_sec: u32) -> Vec<Alert> {
         let mut alerts = Vec::new();
 
-        // Check if UDP or TCP DNS traffic
-        let is_dns_port = match &pkt.l4 {
-            L4::Udp(u) => u.src_port == 53 || u.dst_port == 53,
-            L4::Tcp(t) => t.src_port == 53 || t.dst_port == 53,
-            _ => false,
+        let is_tcp = matches!(&pkt.l4, L4::Tcp(t) if t.src_port == 53 || t.dst_port == 53);
+        let is_udp = matches!(&pkt.l4, L4::Udp(u) if u.src_port == 53 || u.dst_port == 53);
+
+        let dns_payload = if is_tcp && pkt.payload.len() >= 2 {
+            // Strip the 2-byte TCP framing length prefix (RFC 7766)
+            let tcp_len = u16::from_be_bytes([pkt.payload[0], pkt.payload[1]]) as usize;
+            if pkt.payload.len() >= 2 + tcp_len && tcp_len >= 12 {
+                &pkt.payload[2..2 + tcp_len]
+            } else if pkt.payload.len() > 2 {
+                &pkt.payload[2..]
+            } else {
+                return alerts;
+            }
+        } else if is_udp || ndap_protocol::dns::DnsDissector::sniff(&pkt.payload) {
+            &pkt.payload[..]
+        } else {
+            return alerts;
         };
 
-        if !is_dns_port && !ndap_protocol::dns::DnsDissector::sniff(&pkt.payload) {
-            return alerts;
-        }
-
-        let msg = match parse_dns(&pkt.payload) {
+        let msg = match parse_dns(dns_payload) {
             Ok(m) => m,
             Err(_) => return alerts,
         };
@@ -161,6 +169,51 @@ mod tests {
         };
 
         let alerts = rule.on_packet(&pkt, 100);
+        assert_eq!(alerts.len(), 1);
+        assert_eq!(alerts[0].rule, "dns_tunnel");
+        assert_eq!(alerts[0].severity, Severity::High);
+        assert!(alerts[0].message.contains("Possible DNS tunneling"));
+    }
+
+    #[test]
+    fn test_dns_tunnel_detection_over_tcp() {
+        let mut rule = DnsTunnelRule::new(40, 3.5);
+
+        let suspicious_name = "d4e2f7a0b3c6d9e1f4a7b0c3d6e9a8f3b9c1.exfil.darknet.org";
+        let mut raw_dns = Vec::new();
+        raw_dns.extend_from_slice(&[
+            0x43, 0x21, // ID
+            0x01, 0x00, // Standard query
+            0x00, 0x01, // 1 question
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ]);
+        for part in suspicious_name.split('.') {
+            raw_dns.push(part.len() as u8);
+            raw_dns.extend_from_slice(part.as_bytes());
+        }
+        raw_dns.push(0x00);
+        raw_dns.extend_from_slice(&[0x00, 0x01, 0x00, 0x01]); // A, IN
+
+        // DNS-over-TCP: 2-byte length prefix (RFC 7766)
+        let mut tcp_payload = Vec::new();
+        tcp_payload.extend_from_slice(&(raw_dns.len() as u16).to_be_bytes());
+        tcp_payload.extend_from_slice(&raw_dns);
+
+        let pkt = DecodedPacket {
+            eth: None,
+            l3: None,
+            l4: L4::Tcp(ndap_protocol::TcpHeader {
+                src_port: 45000,
+                dst_port: 53,
+                seq: 1,
+                ack: 1,
+                flags: 0x18, // PSH | ACK
+                window: 65535,
+            }),
+            payload: tcp_payload,
+        };
+
+        let alerts = rule.on_packet(&pkt, 200);
         assert_eq!(alerts.len(), 1);
         assert_eq!(alerts[0].rule, "dns_tunnel");
         assert_eq!(alerts[0].severity, Severity::High);
