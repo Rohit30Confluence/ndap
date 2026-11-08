@@ -1,12 +1,27 @@
 # NDAP — Network Detection & Analysis Platform
 
-> A modular, extensible Network Detection & Analysis Platform written in Rust for packet decoding, conversation flow tracking, rule-based threat detection, threat intelligence, and out-of-process Python plugin extensibility.
+> A modular, extensible Network Detection & Analysis Platform written in Rust for packet decoding, conversation flow tracking, rule-based threat detection, threat intelligence, and out-of-process Python plugin extensibility. Available as open-source software and as a managed **[NDAP Cloud SaaS](https://rohit30confluence.github.io/ndap/)** service.
 
+[![SaaS Portal](https://img.shields.io/badge/NDAP%20Cloud-SaaS%20Live-brightgreen?logo=cloudflare)](https://rohit30confluence.github.io/ndap/)
 ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange?logo=rust)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Android-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Tests](https://img.shields.io/badge/Tests-25%2F25%20Passed-brightgreen)
 ![Zero Deps Core](https://img.shields.io/badge/Core%20Deps-Zero-success)
+
+---
+
+## NDAP Cloud (Managed SaaS)
+
+Looking for an enterprise-ready, zero-maintenance network detection solution? **[NDAP Cloud](https://rohit30confluence.github.io/ndap/)** delivers NDAP as a turn-key managed SaaS platform:
+
+- **60-Second Edge Sensor Deployment**: One-line install on Linux (`systemd`), Docker, Kubernetes (`Helm`), or Agentless Cloud VPC Mirroring.
+- **Automated Threat Intelligence**: Continuous background synchronization against ThreatFox, abuse.ch, and custom C2 feeds.
+- **Real-time Live SOC Console**: Interactive streaming dashboard with sub-millisecond alert correlation and MITRE ATT&CK mapping.
+- **Zero-Payload Privacy**: Sensors extract wire metadata and flow metrics locally; customer data payloads never leave your network boundary.
+- **Multi-Channel Dispatch**: Instant alert delivery to Slack, PagerDuty, Webhooks, and SIEM forwarders (Splunk, Datadog, Elasticsearch).
+
+Explore plans and deploy your first sensor at **[rohit30confluence.github.io/ndap](https://rohit30confluence.github.io/ndap/)**.
 
 ---
 

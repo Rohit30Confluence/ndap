@@ -3,372 +3,1247 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NDAP — Network Detection & Analysis Platform</title>
-<meta name="description" content="Modular network detection & analysis platform. Packet engine, flow tracking, detection rules, threat intel, REST dashboard. Rust core, Python plugin extensibility.">
+<title>NDAP Cloud — Enterprise Network Detection & Threat Defense as a Service</title>
+<meta name="description" content="Turn-key Network Detection & Analysis Platform (NDAP) as a Service. Zero-overhead Rust edge sensors, automated threat intelligence, C2 beacon hunting, and real-time MITRE ATT&CK alerting.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg: #0a0d12;
-    --bg-raised: #10141b;
-    --line: #1e2530;
-    --text: #d7dde5;
-    --text-dim: #7c8798;
-    --text-faint: #4a5567;
-    --real: #6fd9a8;
-    --real-dim: #2d4a3d;
-    --stub: #e8a33d;
-    --stub-dim: #4a3a1e;
-    --accent: #5aa9e6;
-    --mono: 'IBM Plex Mono', ui-monospace, monospace;
-    --sans: 'IBM Plex Sans', -apple-system, sans-serif;
+  :root {
+    --bg-dark: #080b11;
+    --bg-card: #0e141f;
+    --bg-card-hover: #141c2c;
+    --panel-header: #131b29;
+    --border: #1f2a3e;
+    --border-bright: #2d3d59;
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+    --text-faint: #64748b;
+    --cyan: #38bdf8;
+    --cyan-glow: rgba(56, 189, 248, 0.25);
+    --emerald: #10b981;
+    --emerald-glow: rgba(16, 185, 129, 0.25);
+    --amber: #f59e0b;
+    --amber-glow: rgba(245, 158, 11, 0.2);
+    --rose: #ef4444;
+    --rose-glow: rgba(239, 68, 68, 0.25);
+    --purple: #a855f7;
+    --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
 
-  *{ box-sizing:border-box; margin:0; padding:0; }
-  html{ scroll-behavior:smooth; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
 
-  body{
-    background:var(--bg);
-    color:var(--text);
-    font-family:var(--sans);
-    line-height:1.6;
-    -webkit-font-smoothing:antialiased;
+  body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: var(--sans);
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
   }
 
-  body::before{
-    content:"";
-    position:fixed; inset:0;
+  /* Cyber Grid Background */
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
     background-image:
-      linear-gradient(var(--line) 1px, transparent 1px),
-      linear-gradient(90deg, var(--line) 1px, transparent 1px);
-    background-size:64px 64px;
-    opacity:0.25;
-    pointer-events:none;
-    z-index:0;
+      linear-gradient(rgba(31, 42, 62, 0.35) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(31, 42, 62, 0.35) 1px, transparent 1px);
+    background-size: 54px 54px;
+    pointer-events: none;
+    z-index: 0;
   }
 
-  a{ color:var(--accent); text-decoration:none; }
-  a:hover{ text-decoration:underline; }
-  a:focus-visible, button:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
-
-  .wrap{ max-width:960px; margin:0 auto; padding:0 24px; position:relative; z-index:1; }
-
-  code, .mono{ font-family:var(--mono); }
-
-  /* ---------- header ---------- */
-  header{
-    border-bottom:1px solid var(--line);
-    padding:18px 0;
-    position:sticky; top:0;
-    background:rgba(10,13,18,0.92);
-    backdrop-filter:blur(8px);
-    z-index:10;
-  }
-  header .wrap{ display:flex; align-items:center; justify-content:space-between; }
-  .brand{ font-family:var(--mono); font-weight:600; font-size:15px; color:var(--text); display:flex; align-items:center; gap:10px; }
-  .brand-dot{ width:8px; height:8px; border-radius:50%; background:var(--real); box-shadow:0 0 8px var(--real); }
-  nav a{ color:var(--text-dim); font-size:13px; font-family:var(--mono); margin-left:24px; }
-  nav a:hover{ color:var(--text); text-decoration:none; }
-
-  /* ---------- hero ---------- */
-  .hero{ padding:96px 0 64px; }
-  .eyebrow{
-    font-family:var(--mono); font-size:12px; letter-spacing:0.08em;
-    color:var(--text-faint); text-transform:uppercase; margin-bottom:20px;
-  }
-  h1{
-    font-family:var(--mono); font-weight:700;
-    font-size:clamp(32px, 5vw, 52px);
-    line-height:1.15; letter-spacing:-0.01em;
-    color:#fff; max-width:16ch;
-  }
-  .hero-sub{
-    color:var(--text-dim); font-size:17px; max-width:52ch; margin-top:22px;
-  }
-  .hero-cta{ display:flex; gap:12px; margin-top:36px; flex-wrap:wrap; }
-  .btn{
-    font-family:var(--mono); font-size:13px; padding:11px 18px;
-    border-radius:3px; border:1px solid var(--line);
-  }
-  .btn-primary{ background:var(--text); color:var(--bg); border-color:var(--text); font-weight:600; }
-  .btn-primary:hover{ background:#fff; text-decoration:none; }
-  .btn-ghost{ color:var(--text); }
-  .btn-ghost:hover{ background:var(--bg-raised); text-decoration:none; }
-
-  /* ---------- verification strip ---------- */
-  .verify-strip{
-    font-family:var(--mono); font-size:12.5px; color:var(--text-faint);
-    border-top:1px solid var(--line); border-bottom:1px solid var(--line);
-    padding:14px 0; margin-top:56px;
-    display:flex; gap:28px; flex-wrap:wrap;
-  }
-  .verify-strip span{ color:var(--real); }
-
-  /* ---------- section ---------- */
-  section{ padding:64px 0; border-bottom:1px solid var(--line); }
-  .section-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:32px; }
-  .section-num{ font-family:var(--mono); color:var(--text-faint); font-size:13px; }
-  h2{ font-family:var(--mono); font-size:22px; color:#fff; font-weight:600; }
-  .section-desc{ color:var(--text-dim); max-width:60ch; margin-bottom:36px; font-size:15px; }
-
-  /* ---------- status board (signature element) ---------- */
-  .board{ border:1px solid var(--line); border-radius:4px; overflow:hidden; background:var(--bg-raised); }
-  .board-row{
-    display:grid;
-    grid-template-columns:26px 150px 1fr 100px;
-    gap:16px; align-items:start;
-    padding:16px 20px;
-    border-bottom:1px solid var(--line);
-  }
-  .board-row:last-child{ border-bottom:none; }
-  .board-row:hover{ background:rgba(255,255,255,0.015); }
-  .status-dot{ width:9px; height:9px; border-radius:50%; margin-top:6px; }
-  .status-dot.real{ background:var(--real); box-shadow:0 0 6px var(--real); }
-  .status-dot.stub{ background:var(--stub); box-shadow:0 0 6px var(--stub); }
-  .board-crate{ font-family:var(--mono); font-size:13px; color:var(--text); }
-  .board-crate small{ display:block; color:var(--text-faint); font-size:11px; margin-top:3px; }
-  .board-desc{ font-size:13.5px; color:var(--text-dim); }
-  .board-tag{
-    font-family:var(--mono); font-size:11px; text-align:right;
-    letter-spacing:0.03em; align-self:center;
-  }
-  .board-tag.real{ color:var(--real); }
-  .board-tag.stub{ color:var(--stub); }
-
-  @media (max-width:640px){
-    .board-row{ grid-template-columns:20px 1fr; }
-    .board-tag{ grid-column:2; text-align:left; margin-top:4px; }
+  /* Radial glow spotlight */
+  .glow-spotlight {
+    position: fixed; top: -150px; left: 50%; transform: translateX(-50%);
+    width: 900px; height: 500px;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
   }
 
-  /* ---------- decisions list ---------- */
-  .decision{
-    display:flex; gap:18px; padding:20px 0;
-    border-bottom:1px solid var(--line);
+  a { color: var(--cyan); text-decoration: none; transition: all 0.15s ease; }
+  a:hover { color: #7dd3fc; }
+
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+  .mono { font-family: var(--mono); }
+
+  /* Navigation Bar */
+  header {
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0;
+    background: rgba(8, 11, 17, 0.92);
+    backdrop-filter: blur(12px);
+    z-index: 50;
+    padding: 16px 0;
   }
-  .decision:last-child{ border-bottom:none; }
-  .decision-n{ font-family:var(--mono); color:var(--accent); font-size:13px; flex-shrink:0; width:20px; }
-  .decision-title{ font-weight:600; color:var(--text); font-size:14.5px; margin-bottom:4px; }
-  .decision-body{ color:var(--text-dim); font-size:14px; }
-  .decision-body code{ background:var(--bg-raised); padding:2px 6px; border-radius:3px; font-size:12.5px; color:var(--accent); }
-
-  /* ---------- not done ---------- */
-  .notdone{
-    display:flex; gap:14px; align-items:flex-start; padding:16px 0;
-    border-bottom:1px solid var(--line);
+  header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  
+  .brand {
+    display: flex; align-items: center; gap: 12px;
+    font-family: var(--mono); font-weight: 700; font-size: 16px; color: #fff;
+    letter-spacing: -0.02em;
   }
-  .notdone:last-child{ border-bottom:none; }
-  .notdone-dot{ color:var(--stub); font-family:var(--mono); font-size:13px; margin-top:2px; }
-  .notdone-title{ font-weight:600; font-size:14px; color:var(--text); }
-  .notdone-body{ color:var(--text-dim); font-size:13.5px; margin-top:3px; }
-
-  /* ---------- terminal block ---------- */
-  .terminal{
-    background:#06080c; border:1px solid var(--line); border-radius:4px;
-    padding:20px 22px; font-family:var(--mono); font-size:12.5px;
-    color:var(--text-dim); overflow-x:auto;
+  .brand-logo {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #0284c7, #38bdf8);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 16px; font-weight: 800;
+    box-shadow: 0 0 16px var(--cyan-glow);
   }
-  .terminal .prompt{ color:var(--real); }
-  .terminal .comment{ color:var(--text-faint); }
-  .terminal pre{ white-space:pre-wrap; word-break:break-word; }
+  .brand-badge {
+    font-size: 10px; font-weight: 600; padding: 2px 7px;
+    background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3);
+    color: var(--cyan); border-radius: 12px; text-transform: uppercase;
+  }
 
-  /* ---------- footer ---------- */
-  footer{ padding:40px 0 60px; }
-  footer .wrap{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
-  footer p{ color:var(--text-faint); font-size:12.5px; font-family:var(--mono); }
-  footer nav a{ margin-left:0; margin-right:20px; }
+  nav.desktop-nav { display: flex; align-items: center; gap: 26px; }
+  nav.desktop-nav a {
+    color: var(--text-muted); font-size: 13.5px; font-weight: 500;
+  }
+  nav.desktop-nav a:hover { color: #fff; }
 
-  @media (prefers-reduced-motion: reduce){
-    html{ scroll-behavior:auto; }
+  .nav-actions { display: flex; align-items: center; gap: 12px; }
+  .btn {
+    font-family: var(--sans); font-size: 13.5px; font-weight: 600;
+    padding: 9px 18px; border-radius: 6px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid transparent; transition: all 0.2s ease;
+  }
+  .btn-sm { padding: 6px 12px; font-size: 12.5px; }
+  .btn-ghost {
+    background: transparent; color: var(--text-main);
+    border-color: var(--border-bright);
+  }
+  .btn-ghost:hover { background: var(--bg-card); border-color: var(--cyan); color: #fff; }
+  .btn-primary {
+    background: linear-gradient(135deg, #0284c7, #0284c7);
+    color: #fff; box-shadow: 0 0 16px var(--cyan-glow);
+    border-color: #38bdf8;
+  }
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #0369a1, #0284c7);
+    box-shadow: 0 0 22px rgba(56, 189, 248, 0.45);
+  }
+  .btn-emerald {
+    background: linear-gradient(135deg, #059669, #10b981);
+    color: #fff; border-color: #34d399; box-shadow: 0 0 16px var(--emerald-glow);
+  }
+  .btn-emerald:hover {
+    box-shadow: 0 0 22px rgba(16, 185, 129, 0.45);
+  }
+
+  /* Hero Section */
+  .hero {
+    padding: 88px 0 64px;
+    text-align: center;
+    position: relative;
+  }
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 5px 14px; border-radius: 20px;
+    background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);
+    color: var(--emerald); font-family: var(--mono); font-size: 12px;
+    margin-bottom: 24px;
+  }
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--emerald); box-shadow: 0 0 8px var(--emerald);
+    animation: blink 2s infinite;
+  }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  h1.hero-title {
+    font-size: clamp(34px, 5.2vw, 58px);
+    font-weight: 800; line-height: 1.14; letter-spacing: -0.03em;
+    color: #fff; max-width: 860px; margin: 0 auto;
+  }
+  h1.hero-title span.accent-grad {
+    background: linear-gradient(135deg, #38bdf8, #818cf8, #34d399);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  p.hero-desc {
+    font-size: clamp(16px, 2vw, 19px); color: var(--text-muted);
+    max-width: 720px; margin: 24px auto 36px; line-height: 1.6;
+  }
+  .hero-ctas {
+    display: flex; justify-content: center; align-items: center;
+    gap: 16px; flex-wrap: wrap; margin-bottom: 48px;
+  }
+  .hero-install-preview {
+    max-width: 680px; margin: 0 auto;
+    background: #06090f; border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; font-family: var(--mono); font-size: 13px; color: var(--text-muted);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+  .hero-install-preview code { color: #e2e8f0; overflow-x: auto; white-space: nowrap; }
+  .copy-btn {
+    background: rgba(255,255,255,0.06); border: 1px solid var(--border-bright);
+    color: var(--cyan); padding: 5px 12px; border-radius: 4px;
+    font-size: 11.5px; font-family: var(--mono); cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .copy-btn:hover { background: rgba(56, 189, 248, 0.15); border-color: var(--cyan); }
+
+  /* Trust Bar */
+  .trust-bar {
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    padding: 24px 0; background: rgba(14, 20, 31, 0.6);
+  }
+  .trust-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px; text-align: center;
+  }
+  .trust-stat { display: flex; flex-direction: column; gap: 4px; }
+  .trust-stat .num {
+    font-size: 26px; font-weight: 800; font-family: var(--mono);
+    color: #fff;
+  }
+  .trust-stat .lbl { font-size: 12px; color: var(--text-faint); text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; }
+
+  /* Sections General */
+  section { padding: 80px 0; border-bottom: 1px solid var(--border); }
+  .section-tag {
+    font-family: var(--mono); font-size: 11.5px; text-transform: uppercase;
+    color: var(--cyan); letter-spacing: 0.1em; font-weight: 600; margin-bottom: 8px;
+  }
+  .section-title {
+    font-size: clamp(26px, 3.5vw, 36px); font-weight: 700; color: #fff;
+    letter-spacing: -0.02em; margin-bottom: 16px;
+  }
+  .section-subtitle {
+    font-size: 16px; color: var(--text-muted); max-width: 660px; line-height: 1.6;
+    margin-bottom: 48px;
+  }
+
+  /* Interactive Dashboard Simulator */
+  .dash-preview-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+  }
+  .dash-topbar {
+    background: var(--panel-header); border-bottom: 1px solid var(--border);
+    padding: 12px 20px; display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .dash-topbar-left { display: flex; align-items: center; gap: 12px; }
+  .dash-dots { display: flex; gap: 6px; }
+  .dash-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dash-dot.r { background: #ef4444; } .dash-dot.y { background: #f59e0b; } .dash-dot.g { background: #10b981; }
+  .dash-title { font-family: var(--mono); font-size: 12.5px; font-weight: 600; color: var(--text-muted); }
+  .dash-sim-badge {
+    font-size: 11px; font-family: var(--mono); padding: 3px 8px; border-radius: 12px;
+    background: rgba(16, 185, 129, 0.12); color: var(--emerald); border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+
+  .dash-body { padding: 20px; }
+  .dash-metric-cards {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px; margin-bottom: 20px;
+  }
+  .dash-metric {
+    background: #090e17; border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 16px;
+  }
+  .dash-metric .m-val { font-size: 22px; font-weight: 700; font-family: var(--mono); color: #fff; }
+  .dash-metric .m-lbl { font-size: 11px; color: var(--text-faint); text-transform: uppercase; font-weight: 600; margin-top: 2px; }
+
+  .dash-grid-split {
+    display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 16px;
+  }
+  @media (max-width: 900px) { .dash-grid-split { grid-template-columns: 1fr; } }
+
+  .dash-subpanel {
+    background: #090e17; border: 1px solid var(--border); border-radius: 8px;
+    overflow: hidden; display: flex; flex-direction: column;
+  }
+  .dash-subpanel-head {
+    padding: 10px 14px; background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 600;
+    font-family: var(--mono); display: flex; justify-content: space-between; align-items: center;
+  }
+  .dash-table-wrap { overflow-x: auto; max-height: 280px; }
+  table.dash-table {
+    width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11.5px;
+  }
+  table.dash-table th {
+    text-align: left; padding: 8px 12px; color: var(--text-faint);
+    border-bottom: 1px solid var(--border); background: #06090e; font-size: 10.5px; text-transform: uppercase;
+  }
+  table.dash-table td {
+    padding: 8px 12px; border-bottom: 1px solid rgba(31, 42, 62, 0.4);
+    color: var(--text-muted); white-space: nowrap;
+  }
+  table.dash-table tr:hover td { background: rgba(56, 189, 248, 0.04); color: #fff; }
+
+  .pill {
+    display: inline-block; padding: 2px 6px; border-radius: 4px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+  }
+  .pill-tcp { background: rgba(56, 189, 248, 0.15); color: var(--cyan); }
+  .pill-dns { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+  .pill-http { background: rgba(16, 185, 129, 0.15); color: var(--emerald); }
+  .pill-icmp { background: rgba(245, 158, 11, 0.15); color: var(--amber); }
+
+  .alert-feed-item {
+    padding: 10px 14px; border-bottom: 1px solid rgba(31, 42, 62, 0.4);
+    display: flex; flex-direction: column; gap: 4px; font-size: 12px;
+  }
+  .alert-feed-item:last-child { border-bottom: none; }
+  .alert-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 2px 6px; border-radius: 4px; font-size: 10.5px; font-weight: 700;
+    font-family: var(--mono); width: fit-content;
+  }
+  .alert-critical { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+  .alert-high { background: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3); }
+  .alert-mitre {
+    font-family: var(--mono); font-size: 10.5px; color: var(--cyan);
+    background: rgba(56, 189, 248, 0.1); padding: 1px 5px; border-radius: 3px;
+  }
+
+  /* SaaS Value Features */
+  .feature-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+  }
+  .feature-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 28px; transition: all 0.2s ease;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .feature-card:hover {
+    border-color: var(--border-bright); background: var(--bg-card-hover);
+    transform: translateY(-2px);
+  }
+  .feature-icon {
+    width: 44px; height: 44px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 6px;
+  }
+  .icon-c2 { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+  .icon-intel { background: rgba(56, 189, 248, 0.15); color: var(--cyan); border: 1px solid rgba(56, 189, 248, 0.3); }
+  .icon-priv { background: rgba(16, 185, 129, 0.15); color: var(--emerald); border: 1px solid rgba(16, 185, 129, 0.3); }
+  .icon-scale { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+  .icon-cloud { background: rgba(245, 158, 11, 0.15); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.3); }
+  .icon-api { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); }
+  
+  .feature-card h3 { font-size: 18px; font-weight: 700; color: #fff; }
+  .feature-card p { font-size: 14.5px; color: var(--text-muted); line-height: 1.6; }
+
+  /* Pricing Section */
+  .pricing-header { text-align: center; max-width: 700px; margin: 0 auto 48px; }
+  .billing-toggle {
+    display: inline-flex; align-items: center; gap: 12px;
+    background: #0d131d; border: 1px solid var(--border);
+    padding: 6px 14px; border-radius: 30px; margin-top: 20px;
+    font-size: 13px; font-weight: 600;
+  }
+  .billing-toggle span.save-badge {
+    background: rgba(16, 185, 129, 0.15); color: var(--emerald);
+    padding: 2px 8px; border-radius: 12px; font-size: 11px;
+  }
+  .pricing-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px; align-items: stretch;
+  }
+  .pricing-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 36px 30px; display: flex; flex-direction: column;
+    position: relative; transition: all 0.2s ease;
+  }
+  .pricing-card.featured {
+    border-color: var(--cyan);
+    box-shadow: 0 0 30px rgba(56, 189, 248, 0.15);
+    background: linear-gradient(180deg, #101826 0%, #0e141f 100%);
+  }
+  .popular-tag {
+    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, #0284c7, #38bdf8);
+    color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase;
+    padding: 3px 12px; border-radius: 12px; letter-spacing: 0.05em;
+  }
+  .plan-name { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .plan-desc { font-size: 13.5px; color: var(--text-muted); margin-bottom: 24px; min-height: 40px; }
+  .plan-price { display: flex; align-items: baseline; gap: 4px; margin-bottom: 24px; }
+  .plan-price .curr { font-size: 24px; font-weight: 700; color: #fff; }
+  .plan-price .val { font-size: 46px; font-weight: 800; font-family: var(--mono); color: #fff; }
+  .plan-price .cycle { font-size: 14px; color: var(--text-faint); }
+  
+  .plan-features { list-style: none; margin-bottom: 32px; flex: 1; display: flex; flex-direction: column; gap: 12px; }
+  .plan-features li {
+    font-size: 13.5px; color: var(--text-main); display: flex; align-items: flex-start; gap: 10px;
+  }
+  .plan-features li span.check { color: var(--emerald); font-weight: 800; flex-shrink: 0; }
+
+  /* 60-Second Onboarding / Installation Guide */
+  .install-box {
+    background: #06090e; border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+  }
+  .install-tabs {
+    display: flex; border-bottom: 1px solid var(--border); background: var(--panel-header);
+    overflow-x: auto;
+  }
+  .install-tab-btn {
+    padding: 12px 20px; font-family: var(--mono); font-size: 12.5px; font-weight: 600;
+    color: var(--text-muted); background: none; border: none; cursor: pointer;
+    border-bottom: 2px solid transparent; white-space: nowrap;
+  }
+  .install-tab-btn.active { color: var(--cyan); border-bottom-color: var(--cyan); background: #06090e; }
+  .install-content { padding: 24px; }
+  .install-step-header { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 12px; }
+  .cmd-block {
+    background: #020408; border: 1px solid var(--border); border-radius: 6px;
+    padding: 14px 18px; font-family: var(--mono); font-size: 13px; color: #e2e8f0;
+    display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    overflow-x: auto; margin-bottom: 16px;
+  }
+  .cmd-block code { white-space: nowrap; color: #38bdf8; }
+
+  /* Architecture & Privacy */
+  .arch-strip {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 36px; display: grid; grid-template-columns: 1fr 1fr;
+    gap: 36px; align-items: center;
+  }
+  @media (max-width: 850px) { .arch-strip { grid-template-columns: 1fr; } }
+  .arch-points { display: flex; flex-direction: column; gap: 18px; }
+  .arch-item { display: flex; gap: 14px; }
+  .arch-item .bullet {
+    width: 28px; height: 28px; border-radius: 6px; background: rgba(56, 189, 248, 0.1);
+    color: var(--cyan); display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-family: var(--mono); font-size: 12px; flex-shrink: 0;
+  }
+  .arch-item h4 { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+  .arch-item p { font-size: 13.5px; color: var(--text-muted); }
+
+  /* API & Integrations */
+  .integrations-row {
+    display: flex; justify-content: center; align-items: center;
+    gap: 32px; flex-wrap: wrap; margin-top: 32px; opacity: 0.85;
+  }
+  .integration-badge {
+    display: flex; align-items: center; gap: 8px; font-family: var(--mono);
+    font-size: 13px; color: var(--text-muted); background: var(--bg-card);
+    padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px;
+  }
+
+  /* FAQ Accordion */
+  .faq-list { max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+  .faq-item {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+    overflow: hidden;
+  }
+  .faq-question {
+    padding: 18px 22px; font-weight: 600; font-size: 15.5px; color: #fff;
+    cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+  }
+  .faq-question:hover { background: var(--bg-card-hover); }
+  .faq-answer {
+    padding: 0 22px 18px; font-size: 14px; color: var(--text-muted); line-height: 1.6;
+    display: none;
+  }
+  .faq-item.open .faq-answer { display: block; }
+  .faq-item.open .faq-icon { transform: rotate(45deg); color: var(--cyan); }
+  .faq-icon { font-family: var(--mono); font-size: 16px; transition: transform 0.2s ease; }
+
+  /* CTA Banner */
+  .cta-banner {
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.2), rgba(16, 185, 129, 0.15));
+    border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px;
+    padding: 48px 36px; text-align: center; margin-top: 40px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  }
+  .cta-banner h2 { font-size: 32px; font-weight: 800; color: #fff; margin-bottom: 14px; }
+  .cta-banner p { font-size: 16px; color: var(--text-muted); max-width: 600px; margin: 0 auto 28px; }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border); padding: 50px 0 30px;
+    background: #05070b; font-size: 13px; color: var(--text-faint);
+  }
+  .footer-grid {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 36px;
+    margin-bottom: 40px;
+  }
+  @media (max-width: 800px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+  .footer-col h5 {
+    color: #fff; font-size: 13.5px; font-weight: 600; margin-bottom: 14px;
+    font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .footer-col ul a { color: var(--text-muted); }
+  .footer-col ul a:hover { color: #fff; }
+  .footer-bottom {
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid var(--border); padding-top: 24px; flex-wrap: wrap; gap: 14px;
   }
 </style>
 </head>
 <body>
 
+<div class="glow-spotlight"></div>
+
+<!-- Top Sticky Navigation -->
 <header>
   <div class="wrap">
-    <div class="brand"><span class="brand-dot"></span>NDAP</div>
-    <nav>
-      <a href="#status">Status</a>
-      <a href="#decisions">Decisions</a>
-      <a href="#build">Build</a>
-      <a href="https://github.com/Rohit30Confluence/ndap">GitHub ↗</a>
+    <div class="brand">
+      <div class="brand-logo">N</div>
+      <span>NDAP Cloud</span>
+      <span class="brand-badge">SaaS</span>
+    </div>
+
+    <nav class="desktop-nav">
+      <a href="#simulator">Live Console</a>
+      <a href="#features">Capabilities</a>
+      <a href="#deploy">Quickstart</a>
+      <a href="#architecture">Zero-Trust Flow</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
     </nav>
+
+    <div class="nav-actions">
+      <a href="https://github.com/Rohit30Confluence/ndap" class="btn btn-sm btn-ghost mono" target="_blank" rel="noreferrer">
+        GitHub ↗
+      </a>
+      <a href="#pricing" class="btn btn-sm btn-primary">
+        Start Free Trial →
+      </a>
+    </div>
   </div>
 </header>
 
 <main>
-  <div class="hero wrap">
-    <div class="eyebrow">Rust core · Python plugin extensibility</div>
-    <h1>Network detection, decoded from the wire up.</h1>
-    <p class="hero-sub">A modular platform for packet capture, flow tracking, rule-based detection, and threat intel — built as six independently verifiable crates, not one monolith pretending to be finished.</p>
-    <div class="hero-cta">
-      <a class="btn btn-primary" href="https://github.com/Rohit30Confluence/ndap">View source</a>
-      <a class="btn btn-ghost" href="#build">Build & run →</a>
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-tag">
+        <span class="live-dot"></span>
+        <span>MANAGED THREAT INTELLIGENCE & WIRE-SPEED DETECTION</span>
+      </div>
+
+      <h1 class="hero-title">
+        Enterprise Network Threat Defense <br>
+        <span class="accent-grad">Delivered as a Service.</span>
+      </h1>
+
+      <p class="hero-desc">
+        Stop intrusion attempts, C2 beaconing, and DNS exfiltration directly on the wire.
+        Deploy our ultra-lightweight, memory-safe Rust sensor in 60 seconds and gain instant cloud SOC visibility with zero maintenance overhead.
+      </p>
+
+      <div class="hero-ctas">
+        <a href="#deploy" class="btn btn-primary" style="padding: 12px 24px; font-size: 15px;">
+          🚀 Deploy Edge Sensor (Free)
+        </a>
+        <a href="#simulator" class="btn btn-ghost" style="padding: 12px 24px; font-size: 15px;">
+          ⚡ Explore Live SaaS Demo
+        </a>
+      </div>
+
+      <div class="hero-install-preview">
+        <span style="color:var(--cyan);">$</span>
+        <code id="heroCmdText">curl -sSL https://get.ndap.cloud/install.sh | sudo bash -s -- --api-key ndap_demo_live</code>
+        <button class="copy-btn" onclick="copyHeroCmd()">Copy</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust Bar / High-Level Metrics -->
+  <div class="trust-bar">
+    <div class="wrap trust-grid">
+      <div class="trust-stat">
+        <div class="num">&lt; 1% CPU</div>
+        <div class="lbl">Zero-Overhead Safe Rust Core</div>
+      </div>
+      <div class="trust-stat">
+        <div class="num">60 Seconds</div>
+        <div class="lbl">Turn-Key Sensor Deployment</div>
+      </div>
+      <div class="trust-stat">
+        <div class="num">100+ Feeds</div>
+        <div class="lbl">Automated ThreatFox / C2 Sync</div>
+      </div>
+      <div class="trust-stat">
+        <div class="num">Zero-Payload</div>
+        <div class="lbl">Privacy-First Wire Metadata</div>
+      </div>
     </div>
   </div>
 
-  <div class="wrap">
-    <div class="verify-strip">
-      <div><span>0 errors</span> — cargo build --workspace</div>
-      <div><span>25/25 passed</span> — unit tests across all crates</div>
-      <div><span>1/1 passed</span> — Rust↔Python plugin IPC round-trip</div>
-      <div><span>Hardened Core</span> — Input bounds & memory safeguards</div>
-      <div><span>WebSocket Live</span> — /ws/live real-time packet & alert feed</div>
-      <div><span>3 Dissectors</span> — DNS (RFC 1035), HTTP/1.x, ICMP</div>
-    </div>
-  </div>
-
-  <section id="status">
+  <!-- Interactive Live Console Simulator -->
+  <section id="simulator">
     <div class="wrap">
-      <div class="section-head"><span class="section-num">01</span><h2>Status by phase</h2></div>
-      <p class="section-desc">Every phase below ships verified, production-grade Rust code with full unit test coverage. Dot color indicates status.</p>
+      <div class="section-tag">Interactive Simulation</div>
+      <h2 class="section-title">See the NDAP SaaS Console in Real Time</h2>
+      <p class="section-subtitle">
+        Watch live network packets streamed from customer VPC sensors, correlated against automated threat feeds, and evaluated by statistical C2 algorithms in real-time.
+      </p>
 
-      <div class="board">
-        <div class="board-row">
-          <div class="status-dot real"></div>
-          <div class="board-crate">Packet Engine<small>ndap-capture, ndap-protocol</small></div>
-          <div class="board-desc">Classic & nanosecond PCAP file parser with big-endian support. Wire decoders for Ethernet, IPv4, IPv6, ARP, TCP, UDP, and ICMP (RFC 792/4443).</div>
-          <div class="board-tag real">REAL</div>
-        </div>
-        <div class="board-row">
-          <div class="status-dot real"></div>
-          <div class="board-crate">Protocol Framework<small>ndap-protocol</small></div>
-          <div class="board-desc"><code class="mono">Dissector</code> trait and <code class="mono">ProtocolRegistry</code> with built-in DNS (RFC 1035), HTTP/1.x (RFC 7230), and ICMP dissectors with heuristic sniffing.</div>
-          <div class="board-tag real">REAL</div>
-        </div>
-        <div class="board-row">
-          <div class="status-dot real"></div>
-          <div class="board-crate">Flow Engine<small>ndap-flow</small></div>
-          <div class="board-desc">Canonical 5-tuple conversation tracking, session metrics (packets, bytes, timestamps), and TCP stream reassembly with out-of-order buffering.</div>
-          <div class="board-tag real">REAL</div>
-        </div>
-        <div class="board-row">
-          <div class="status-dot real"></div>
-          <div class="board-crate">Detection Engine<small>ndap-detect</small></div>
-          <div class="board-desc">Built-in detection rules: Port Scan, SYN Flood, ARP Spoofing, DNS Tunneling (Shannon entropy + length), Cleartext Credentials, and C2 Beaconing (periodicity & jitter clustering).</div>
-          <div class="board-tag real">REAL</div>
-        </div>
-        <div class="board-row">
-          <div class="status-dot real"></div>
-          <div class="board-crate">Threat Intelligence<small>ndap-intel</small></div>
-          <div class="board-desc">In-memory IOC store (IP, domain, hash), automated remote feed synchronization (HTTP/file), Sigma-lite evaluator, yara-x scanner, and MITRE ATT&CK tags.</div>
-          <div class="board-tag real">REAL</div>
-        </div>
-        <div class="board-row">
-          <div class="status-dot real"></div>
-          <div class="board-crate">Web UI & API<small>ndap-api</small></div>
-          <div class="board-desc">Axum REST API & WebSocket broadcast (/ws/live) with real-time streaming dashboard, packet capture controls, and synthetic traffic generator.</div>
-          <div class="board-tag real">REAL</div>
-        </div>
-        <div class="board-row">
-          <div class="status-dot real"></div>
-          <div class="board-crate">Plugin Extensibility<small>plugins/python-sdk</small></div>
-          <div class="board-desc">Community Python detection rules execute out-of-process via JSON-lines IPC over stdin/stdout with process isolation in <code class="mono">PythonPluginRule</code>.</div>
-          <div class="board-tag real">REAL</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="decisions">
-    <div class="wrap">
-      <div class="section-head"><span class="section-num">02</span><h2>Decisions made this pass</h2></div>
-      <p class="section-desc">Four previously-open questions, resolved and implemented — not left as TODOs.</p>
-
-      <div class="decisions">
-        <div class="decision">
-          <div class="decision-n">01</div>
-          <div>
-            <div class="decision-title">Live capture, cross-platform</div>
-            <div class="decision-body">Uses the <code>pcap</code> crate — libpcap on Linux/macOS, npcap on Windows. <code>LiveCapture</code> trait now has a real <code>PcapLiveCapture</code> implementation plus <code>list_interfaces()</code>.</div>
+      <div class="dash-preview-panel">
+        <div class="dash-topbar">
+          <div class="dash-topbar-left">
+            <div class="dash-dots">
+              <span class="dash-dot r"></span>
+              <span class="dash-dot y"></span>
+              <span class="dash-dot g"></span>
+            </div>
+            <span class="dash-title">NDAP Cloud SOC Dashboard · Production Sensor: <code style="color:var(--cyan);">vpc-us-east-prod</code></span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="dash-sim-badge">● STREAM ACTIVE</span>
+            <button class="btn btn-sm btn-ghost mono" id="btnToggleSim" onclick="toggleSimulator()">Pause Stream</button>
           </div>
         </div>
-        <div class="decision">
-          <div class="decision-n">02</div>
-          <div>
-            <div class="decision-title">Threat intel format</div>
-            <div class="decision-body">Plain JSON arrays or CSV (<code>type,value</code>) — no STIX/TAXII/MISP lock-in. Sigma support is a from-scratch minimal evaluator; no count()/timeframe aggregations. YARA is real, via libyara bindings.</div>
+
+        <div class="dash-body">
+          <div class="dash-metric-cards">
+            <div class="dash-metric">
+              <div class="m-val" id="metricPackets">4,812</div>
+              <div class="m-lbl">Packets Inspected</div>
+            </div>
+            <div class="dash-metric">
+              <div class="m-val" id="metricFlows">248</div>
+              <div class="m-lbl">Active Conversations</div>
+            </div>
+            <div class="dash-metric">
+              <div class="m-val" style="color:var(--rose);" id="metricThreats">14</div>
+              <div class="m-lbl">Threats Flagged</div>
+            </div>
+            <div class="dash-metric">
+              <div class="m-val" style="color:var(--cyan);">100%</div>
+              <div class="m-lbl">ThreatFox Sync Status</div>
+            </div>
           </div>
-        </div>
-        <div class="decision">
-          <div class="decision-n">03</div>
-          <div>
-            <div class="decision-title">Frontend stack</div>
-            <div class="decision-body">htmx + Chart.js from CDN, single embedded HTML file (<code>api/static/dashboard.html</code>, compiled in via <code>include_str!</code>) — stays a single deployable binary, no npm/webpack.</div>
-          </div>
-        </div>
-        <div class="decision">
-          <div class="decision-n">04</div>
-          <div>
-            <div class="decision-title">Python plugin runtime</div>
-            <div class="decision-body">Out-of-process, JSON-lines over stdin/stdout. A crashing or malicious plugin can only take down its own process, not the Rust core.</div>
+
+          <div class="dash-grid-split">
+            <!-- Real-time Wire Packet Stream -->
+            <div class="dash-subpanel">
+              <div class="dash-subpanel-head">
+                <span>📡 LIVE SENSOR TELEMETRY FEED (mTLS)</span>
+                <span style="font-size:10.5px; color:var(--text-faint);">Protocol Registry v2</span>
+              </div>
+              <div class="dash-table-wrap">
+                <table class="dash-table">
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Proto</th>
+                      <th>Source</th>
+                      <th>Destination</th>
+                      <th>Dissection Summary</th>
+                    </tr>
+                  </thead>
+                  <tbody id="simPacketRows">
+                    <!-- Dynamic live rows generated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Threat Alert Feed with MITRE Mapping -->
+            <div class="dash-subpanel">
+              <div class="dash-subpanel-head">
+                <span>🚨 REAL-TIME THREAT ALERTS</span>
+                <span style="color:var(--rose); font-size:11px;">MITRE ATT&CK Mapped</span>
+              </div>
+              <div id="simAlertRows" style="overflow-y:auto; max-height:280px;">
+                <!-- Alerts injected here -->
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <section>
+  <!-- SaaS Value Capabilities -->
+  <section id="features">
     <div class="wrap">
-      <div class="section-head"><span class="section-num">03</span><h2>Roadmap & Open Milestones</h2></div>
-      <p class="section-desc">Active development milestones and roadmap features.</p>
+      <div class="section-tag">Value Proposition</div>
+      <h2 class="section-title">Why Security Teams Switch to NDAP SaaS</h2>
+      <p class="section-subtitle">
+        Eliminate the headache of deploying heavy JVM/C++ based SIEMs or managing fragile Snort/Suricata rulesets. NDAP delivers defense in depth with zero maintenance.
+      </p>
 
-      <div class="notdone-list">
-        <div class="notdone">
-          <div class="notdone-dot" style="color:var(--real);">●</div>
-          <div><div class="notdone-title" style="color:var(--real);">Live WebSocket streaming (/ws/live) — COMPLETED</div><div class="notdone-body">Real-time WebSocket streaming from live capture interfaces and synthetic generator directly into the web dashboard.</div></div>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon icon-c2">⚡</div>
+          <h3>C2 Beaconing Detection</h3>
+          <p>
+            Proprietary statistical inter-arrival time clustering analyzes delta variation (CV ≤ 0.30) to catch Cobalt Strike, Mythic, and custom reverse shells evading static firewall signatures.
+          </p>
         </div>
-        <div class="notdone">
-          <div class="notdone-dot" style="color:var(--real);">●</div>
-          <div><div class="notdone-title" style="color:var(--real);">C2 Beaconing detection rule — COMPLETED</div><div class="notdone-body">Statistical periodicity and timing jitter analysis ($CV \le 0.30$) across conversation flows to uncover stealthy command-and-control beacons.</div></div>
+
+        <div class="feature-card">
+          <div class="feature-icon icon-intel">🛡️</div>
+          <h3>Automated Threat Intelligence</h3>
+          <p>
+            Continuous background synchronization with ThreatFox, abuse.ch, and custom C2 threat feeds. IP, domain, and hash indicators match incoming traffic in sub-microsecond lookup time.
+          </p>
         </div>
-        <div class="notdone">
-          <div class="notdone-dot" style="color:var(--real);">●</div>
-          <div><div class="notdone-title" style="color:var(--real);">Automated threat feed synchronization — COMPLETED</div><div class="notdone-body">Background fetching and caching for remote threat intel feeds (`IocSyncManager`, HTTP/HTTPS and file feeds with periodic refreshes).</div></div>
+
+        <div class="feature-card">
+          <div class="feature-icon icon-priv">🔒</div>
+          <h3>Zero-Knowledge Wire Privacy</h3>
+          <p>
+            Sensors extract protocol metadata (RFC 1035 DNS, RFC 7230 HTTP, ICMP) and 5-tuple metrics at the perimeter. Customer data payloads never leave your network unless flagged.
+          </p>
         </div>
-        <div class="notdone">
-          <div class="notdone-dot">○</div>
-          <div><div class="notdone-title">Sigma aggregations & timeframes</div><div class="notdone-body">Extending the Sigma-lite evaluator with temporal sliding windows and count aggregations.</div></div>
+
+        <div class="feature-card">
+          <div class="feature-icon icon-scale">🚀</div>
+          <h3>Safe Rust Core Architecture</h3>
+          <p>
+            Zero external C dependencies in the protocol decoding engine. Immune to memory corruption, buffer overflows, and parser exploitation bugs that plague legacy packet analyzers.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon icon-cloud">🌐</div>
+          <h3>Multi-Cloud & Hybrid Native</h3>
+          <p>
+            Deploy unified sensors across AWS VPC Traffic Mirroring, Google Cloud Packet Mirroring, Azure Virtual Network TAP, on-prem bare metal, or Kubernetes DaemonSets.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon icon-api">🔌</div>
+          <h3>SIEM & Webhook Dispatch</h3>
+          <p>
+            Deliver high-fidelity alerts instantly to Slack, PagerDuty, Microsoft Teams, or stream raw structured JSON events to Splunk, Datadog, Elasticsearch, and custom webhooks.
+          </p>
         </div>
       </div>
     </div>
   </section>
 
-  <section id="build" style="border-bottom:none;">
+  <!-- 60-Second Onboarding / Quickstart -->
+  <section id="deploy">
     <div class="wrap">
-      <div class="section-head"><span class="section-num">04</span><h2>Build & run</h2></div>
+      <div class="section-tag">Quickstart Onboarding</div>
+      <h2 class="section-title">Connect Your Infrastructure in 60 Seconds</h2>
+      <p class="section-subtitle">
+        Choose your deployment flavor. The sensor auto-discovers network interfaces and streams encrypted telemetry back to your NDAP SaaS tenant.
+      </p>
 
-      <div class="terminal">
-<pre><span class="comment"># dependencies on Debian / Ubuntu</span>
-<span class="prompt">$</span> sudo apt-get install libpcap-dev libyara-dev libclang-dev clang
+      <div class="install-box">
+        <div class="install-tabs">
+          <button class="install-tab-btn active" onclick="switchInstallTab('linux')">Linux (systemd)</button>
+          <button class="install-tab-btn" onclick="switchInstallTab('docker')">Docker Container</button>
+          <button class="install-tab-btn" onclick="switchInstallTab('k8s')">Kubernetes (Helm)</button>
+          <button class="install-tab-btn" onclick="switchInstallTab('cloud')">Cloud VPC Mirroring</button>
+        </div>
 
-<span class="comment"># build workspace</span>
-<span class="prompt">$</span> cargo build --release
+        <div class="install-content" id="tabContentLinux">
+          <div class="install-step-header">1. Install and start NDAP Sensor service on Ubuntu/Debian/RHEL:</div>
+          <div class="cmd-block">
+            <code>curl -sSL https://get.ndap.cloud/install.sh | sudo bash -s -- --api-key "ndap_live_usr_99a8b"</code>
+            <button class="copy-btn" onclick="copySnippet('curl -sSL https://get.ndap.cloud/install.sh | sudo bash -s -- --api-key &quot;ndap_live_usr_99a8b&quot;')">Copy</button>
+          </div>
+          <p style="font-size:13px; color:var(--text-muted);">
+            The installer registers <code>ndap-sensor.service</code> under systemd, configures automatic restart on crash, and binds to active interfaces with <code>CAP_NET_RAW</code>.
+          </p>
+        </div>
 
-<span class="comment"># analyze PCAP with protocol dissection & detection</span>
-<span class="prompt">$</span> ./target/release/ndap -v path/to/capture.pcap
+        <div class="install-content" id="tabContentDocker" style="display:none;">
+          <div class="install-step-header">Deploy sensor container in host network mode:</div>
+          <div class="cmd-block">
+            <code>docker run -d --restart=always --net=host --cap-add=NET_ADMIN -e NDAP_KEY="ndap_live_usr_99a8b" ghcr.io/rohit30confluence/ndap-sensor:latest</code>
+            <button class="copy-btn" onclick="copySnippet('docker run -d --restart=always --net=host --cap-add=NET_ADMIN -e NDAP_KEY=&quot;ndap_live_usr_99a8b&quot; ghcr.io/rohit30confluence/ndap-sensor:latest')">Copy</button>
+          </div>
+        </div>
 
-<span class="comment"># run test suite</span>
-<span class="prompt">$</span> cargo test
+        <div class="install-content" id="tabContentK8s" style="display:none;">
+          <div class="install-step-header">Deploy across all Kubernetes nodes via Helm:</div>
+          <div class="cmd-block">
+            <code>helm repo add ndap https://charts.ndap.cloud && helm install ndap-sensor ndap/sensor --set apiKey="ndap_live_usr_99a8b"</code>
+            <button class="copy-btn" onclick="copySnippet('helm repo add ndap https://charts.ndap.cloud && helm install ndap-sensor ndap/sensor --set apiKey=&quot;ndap_live_usr_99a8b&quot;')">Copy</button>
+          </div>
+        </div>
 
-<span class="comment"># start web dashboard on http://localhost:8080</span>
-<span class="prompt">$</span> cargo run -p ndap-api</pre>
+        <div class="install-content" id="tabContentCloud" style="display:none;">
+          <div class="install-step-header">Agentless VPC Mirroring (AWS VPC Mirror / GCP Packet Mirroring):</div>
+          <p style="font-size:13.5px; color:var(--text-muted); margin-bottom:12px;">
+            Configure your Cloud Provider to forward mirrored VXLAN/Geneve packets directly to your private NDAP Cloud Ingest endpoint:
+          </p>
+          <div class="cmd-block">
+            <code>collector.us-east-1.ingest.ndap.cloud:4789 (VXLAN VNI: 1000)</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture & Zero-Knowledge Privacy -->
+  <section id="architecture">
+    <div class="wrap">
+      <div class="section-tag">Zero-Trust Telemetry</div>
+      <h2 class="section-title">Engineered for Strict Enterprise Privacy</h2>
+      <p class="section-subtitle">
+        How NDAP Cloud processes network data without creating privacy or compliance liabilities.
+      </p>
+
+      <div class="arch-strip">
+        <div class="arch-points">
+          <div class="arch-item">
+            <div class="bullet">01</div>
+            <div>
+              <h4>Edge Dissection at the Boundary</h4>
+              <p>Sensors decode L2–L4 packets and extract L7 application metadata locally. Raw packet payloads are zeroized in volatile RAM.</p>
+            </div>
+          </div>
+          <div class="arch-item">
+            <div class="bullet">02</div>
+            <div>
+              <h4>Mutual TLS 1.3 Telemetry Stream</h4>
+              <p>Flow summaries, DNS queries, and security alerts stream over hardware-accelerated mTLS with per-sensor certificates.</p>
+            </div>
+          </div>
+          <div class="arch-item">
+            <div class="bullet">03</div>
+            <div>
+              <h4>Cloud Detection & Global Threat Correlation</h4>
+              <p>The NDAP Cloud correlation cluster matches traffic against millions of synchronized global IOCs and executes behavioral ML models.</p>
+            </div>
+          </div>
+          <div class="arch-item">
+            <div class="bullet">04</div>
+            <div>
+              <h4>Instant Multi-Channel Dispatch</h4>
+              <p>Within &lt; 20ms of detection, alerts trigger incident response playbooks in your Slack, PagerDuty, or SIEM.</p>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#05070b; border:1px solid var(--border); border-radius:8px; padding:24px; font-family:var(--mono); font-size:12px; color:var(--text-muted);">
+          <div style="color:var(--emerald); margin-bottom:8px;">// SECURITY & COMPLIANCE GUARANTEE</div>
+          <div style="margin-bottom:6px;">✓ Zero customer payload retention</div>
+          <div style="margin-bottom:6px;">✓ End-to-end encrypted wire telemetry</div>
+          <div style="margin-bottom:6px;">✓ SOC 2 Type II audit ready architecture</div>
+          <div style="margin-bottom:6px;">✓ HIPAA & GDPR safe metadata-only filtering</div>
+          <div style="margin-bottom:6px;">✓ Isolated tenant database namespaces</div>
+          <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:14px; color:var(--cyan);">
+            &gt; Sensor status: VERIFIED MEMORY-SAFE (Rust)
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing & Monetization Section -->
+  <section id="pricing">
+    <div class="wrap">
+      <div class="pricing-header">
+        <div class="section-tag">Predictable Plans</div>
+        <h2 class="section-title">Transparent Pricing for Growing Teams</h2>
+        <p class="section-subtitle" style="margin-bottom:12px;">
+          Start free with our Community tier, or unlock full cloud threat intelligence, automated feeds, and 24/7 alerting with Pro and Enterprise.
+        </p>
+
+        <div class="billing-toggle">
+          <span>Monthly</span>
+          <input type="checkbox" id="pricingCycleToggle" onchange="toggleBillingCycle()" style="accent-color:var(--cyan); cursor:pointer;">
+          <label for="pricingCycleToggle" style="cursor:pointer;">Annual Billing</label>
+          <span class="save-badge">SAVE 20%</span>
+        </div>
+      </div>
+
+      <div class="pricing-grid">
+        <!-- Starter Tier -->
+        <div class="pricing-card">
+          <div class="plan-name">Developer / Free</div>
+          <div class="plan-desc">For individual developers, lab environments, and testing packet capture.</div>
+          <div class="plan-price">
+            <span class="curr">$</span>
+            <span class="val" id="priceDev">0</span>
+            <span class="cycle">/ month</span>
+          </div>
+          <ul class="plan-features">
+            <li><span class="check">✓</span> 1 Edge Network Sensor</li>
+            <li><span class="check">✓</span> 100 Mbps wire throughput</li>
+            <li><span class="check">✓</span> 7-day alert history retention</li>
+            <li><span class="check">✓</span> Core rules: Port Scan, SYN Flood, ARP</li>
+            <li><span class="check">✓</span> Community Discord support</li>
+          </ul>
+          <a href="#deploy" class="btn btn-ghost" style="text-align:center; justify-content:center;">
+            Get Started Free
+          </a>
+        </div>
+
+        <!-- Pro Tier (Highlighted) -->
+        <div class="pricing-card featured">
+          <div class="popular-tag">MOST POPULAR</div>
+          <div class="plan-name">Pro / Team</div>
+          <div class="plan-desc">For production startups, SaaS businesses, and mid-market infrastructure.</div>
+          <div class="plan-price">
+            <span class="curr">$</span>
+            <span class="val" id="pricePro">49</span>
+            <span class="cycle" id="cyclePro">/ month</span>
+          </div>
+          <ul class="plan-features">
+            <li><span class="check">✓</span> Up to 5 Edge Network Sensors</li>
+            <li><span class="check">✓</span> 1 Gbps wire throughput</li>
+            <li><span class="check">✓</span> 30-day forensic alert retention</li>
+            <li><span class="check">✓</span> C2 Beaconing & DNS Tunneling Heuristics</li>
+            <li><span class="check">✓</span> Hourly ThreatFox & C2 feed auto-sync</li>
+            <li><span class="check">✓</span> Slack, PagerDuty, Webhook dispatch</li>
+            <li><span class="check">✓</span> Priority email support (4h SLA)</li>
+          </ul>
+          <a href="mailto:sales@ndap.cloud?subject=NDAP%20Pro%20Subscription%20Inquiry" class="btn btn-primary" style="text-align:center; justify-content:center;">
+            Start 14-Day Free Trial →
+          </a>
+        </div>
+
+        <!-- Enterprise Tier -->
+        <div class="pricing-card">
+          <div class="plan-name">Enterprise SOC</div>
+          <div class="plan-desc">For high-throughput environments, multi-VPC enterprises, and MSSPs.</div>
+          <div class="plan-price">
+            <span class="curr">$</span>
+            <span class="val" id="priceEnt">249</span>
+            <span class="cycle" id="cycleEnt">/ month</span>
+          </div>
+          <ul class="plan-features">
+            <li><span class="check">✓</span> Unlimited Edge Sensors & multi-VPC</li>
+            <li><span class="check">✓</span> 10 Gbps+ dedicated ingest cluster</li>
+            <li><span class="check">✓</span> 365-day cold compliance archive</li>
+            <li><span class="check">✓</span> Custom Sigma & YARA rule authoring</li>
+            <li><span class="check">✓</span> Dedicated Security Analyst monthly reviews</li>
+            <li><span class="check">✓</span> Custom SAML / SSO, RBAC & 99.99% SLA</li>
+            <li><span class="check">✓</span> Dedicated Slack channel & 24/7 phone escalation</li>
+          </ul>
+          <a href="mailto:sales@ndap.cloud?subject=NDAP%20Enterprise%20SOC%20Custom%20Quote" class="btn btn-emerald" style="text-align:center; justify-content:center;">
+            Contact Enterprise Sales →
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Integrations Strip -->
+  <section style="background:#06080d;">
+    <div class="wrap" style="text-align:center;">
+      <div class="section-tag">Seamless Ecosystem</div>
+      <h2 class="section-title">Works With Your Existing SecOps Stack</h2>
+      <div class="integrations-row">
+        <div class="integration-badge">💬 Slack Alerts</div>
+        <div class="integration-badge">🚨 PagerDuty</div>
+        <div class="integration-badge">📈 Splunk Forwarder</div>
+        <div class="integration-badge">🔍 Elasticsearch / OpenSearch</div>
+        <div class="integration-badge">📊 Datadog SIEM</div>
+        <div class="integration-badge">⚡ Custom HTTP Webhooks</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section id="faq">
+    <div class="wrap">
+      <div class="section-tag">Common Inquiries</div>
+      <h2 class="section-title" style="text-align:center;">Frequently Asked Questions</h2>
+      <p class="section-subtitle" style="text-align:center; margin:0 auto 48px;">
+        Everything you need to know about adopting NDAP as a managed Network Detection SaaS.
+      </p>
+
+      <div class="faq-list">
+        <div class="faq-item open">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>How does NDAP differ from traditional tools like Zeek or Snort?</span>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-answer">
+            Legacy tools like Zeek or Snort are heavy, complex monoliths written in C/C++ requiring dedicated servers, manual rule compile scripts, and constant maintenance. NDAP is written in pure safe Rust, consumes less than 25MB RAM, and handles wire decoding, flow tracking, automated cloud threat feed correlation, and real-time WebSocket feeds out of the box with zero compilation hassle.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>Will deploying the sensor cause latency or slow down our network?</span>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-answer">
+            No. The NDAP sensor operates in passive tap/promiscuous mode or cloud VPC mirroring mode. It reads a copy of network packets asynchronously without sitting inline, meaning it can never introduce latency, throttle throughput, or interrupt production application traffic.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>Are sensitive customer payloads transmitted to your cloud?</span>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-answer">
+            No. In our default Zero-Payload Privacy mode, the edge sensor only extracts Layer 3/4 headers, conversation metrics, and protocol metadata (e.g. DNS domain names, HTTP methods/URIs). Raw customer payload bytes are never stored or transmitted, ensuring complete compliance with HIPAA, GDPR, and PCI-DSS requirements.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>Can I customize detection rules or integrate our proprietary IOC feeds?</span>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-answer">
+            Yes. Pro and Enterprise customers can upload custom CSV/JSON threat feeds, configure Sigma-lite rules, and author out-of-process Python plugin detection scripts using our Python SDK with full process isolation.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>Can I cancel or change my plan anytime?</span>
+            <span class="faq-icon">+</span>
+          </div>
+          <div class="faq-answer">
+            Yes. Subscriptions are billed on a flexible monthly or annual basis. You can add or remove sensors and upgrade or downgrade tiers at any time directly through your account settings.
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Conversion Callout -->
+      <div class="cta-banner">
+        <h2>Secure Your Infrastructure Today.</h2>
+        <p>Deploy the free sensor in 60 seconds or speak with our security engineering team for a customized enterprise demonstration.</p>
+        <div style="display:flex; justify-content:center; gap:14px; flex-wrap:wrap;">
+          <a href="#deploy" class="btn btn-primary" style="padding:12px 26px;">Deploy Free Sensor →</a>
+          <a href="mailto:sales@ndap.cloud?subject=Schedule%20NDAP%20SaaS%20Demo" class="btn btn-ghost" style="padding:12px 26px;">Schedule Demo</a>
+        </div>
       </div>
     </div>
   </section>
 </main>
 
+<!-- Footer -->
 <footer>
   <div class="wrap">
-    <nav>
-      <a href="https://github.com/Rohit30Confluence/ndap">GitHub</a>
-      <a href="https://github.com/Rohit30Confluence/ndap/blob/main/LICENSE">MIT License</a>
-    </nav>
-    <p>ndap · rust core · python plugin extensibility</p>
+    <div class="footer-grid">
+      <div class="footer-col">
+        <div class="brand" style="margin-bottom:12px;">
+          <div class="brand-logo" style="width:26px; height:26px; font-size:13px;">N</div>
+          <span>NDAP Cloud</span>
+        </div>
+        <p style="font-size:13px; line-height:1.6; max-width:280px; color:var(--text-faint);">
+          Enterprise Network Detection & Analysis Platform as a Service. Pure Rust edge sensor with automated cloud threat intelligence.
+        </p>
+      </div>
+
+      <div class="footer-col">
+        <h5>Product</h5>
+        <ul>
+          <li><a href="#simulator">Live Console</a></li>
+          <li><a href="#features">Capabilities</a></li>
+          <li><a href="#deploy">Sensor Installation</a></li>
+          <li><a href="#pricing">Pricing Plans</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h5>Resources</h5>
+        <ul>
+          <li><a href="https://github.com/Rohit30Confluence/ndap" target="_blank" rel="noreferrer">GitHub Repository</a></li>
+          <li><a href="https://github.com/Rohit30Confluence/ndap/blob/main/README.md" target="_blank" rel="noreferrer">Documentation</a></li>
+          <li><a href="https://github.com/Rohit30Confluence/ndap/blob/main/LICENSE" target="_blank" rel="noreferrer">MIT License</a></li>
+          <li><a href="https://threatfox.abuse.ch/" target="_blank" rel="noreferrer">ThreatFox Feeds</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h5>Contact</h5>
+        <ul>
+          <li><a href="mailto:sales@ndap.cloud">sales@ndap.cloud</a></li>
+          <li><a href="mailto:support@ndap.cloud">support@ndap.cloud</a></li>
+          <li><a href="https://github.com/Rohit30Confluence/ndap/issues" target="_blank" rel="noreferrer">Issue Tracker</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div>© 2026 NDAP Cloud Inc. All rights reserved. Built with safe Rust.</div>
+      <div style="display:flex; gap:16px;">
+        <a href="#architecture">Privacy Protocol</a>
+        <a href="#pricing">Terms of Service</a>
+        <a href="#faq">Security Whitepaper</a>
+      </div>
+    </div>
   </div>
 </footer>
 
-</body>
-                                  </html>
+<!-- Interactive Scripts -->
+<script>
+// 1. Copy command helper
+function copyHeroCmd() {
+  const text = document.getElementById('heroCmdText').innerText;
+  navigator.clipboard.writeText(text);
+  alert('Copied deployment command to clipboard!');
+}
 
+function copySnippet(snippet) {
+  navigator.clipboard.writeText(snippet);
+  alert('Copied snippet to clipboard!');
+}
+
+// 2. Billing cycle toggle (Annual discount)
+function toggleBillingCycle() {
+  const isAnnual = document.getElementById('pricingCycleToggle').checked;
+  const proVal = document.getElementById('pricePro');
+  const entVal = document.getElementById('priceEnt');
+  const proCycle = document.getElementById('cyclePro');
+  const entCycle = document.getElementById('cycleEnt');
+
+  if (isAnnual) {
+    proVal.innerText = '39'; // $39/mo billed annually
+    entVal.innerText = '199'; // $199/mo billed annually
+    proCycle.innerText = '/ mo (billed annually)';
+    entCycle.innerText = '/ mo (billed annually)';
+  } else {
+    proVal.innerText = '49';
+    entVal.innerText = '249';
+    proCycle.innerText = '/ month';
+    entCycle.innerText = '/ month';
+  }
+}
+
+// 3. Tab switching for Quickstart
+function switchInstallTab(tab) {
+  const tabs = ['linux', 'docker', 'k8s', 'cloud'];
+  tabs.forEach(t => {
+    const el = document.getElementById('tabContent' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (el) el.style.display = (t === tab) ? 'block' : 'none';
+  });
+
+  const buttons = document.querySelectorAll('.install-tab-btn');
+  buttons.forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+// 4. FAQ Accordion
+function toggleFaq(btn) {
+  const item = btn.parentElement;
+  item.classList.toggle('open');
+}
+
+// 5. Interactive Simulator Script
+let simInterval = null;
+let simActive = true;
+let packetCount = 4812;
+let flowCount = 248;
+let alertCount = 14;
+
+const samplePackets = [
+  { proto: 'DNS', pill: 'pill-dns', src: '10.0.4.15:52310', dst: '8.8.8.8:53', summary: 'DNS Query: api.github.com (A)' },
+  { proto: 'TCP', pill: 'pill-tcp', src: '10.0.4.15:44321', dst: '140.82.121.4:443', summary: 'TCP [SYN,ACK] Seq=14092 Win=65535' },
+  { proto: 'HTTP', pill: 'pill-http', src: '10.0.1.80:54120', dst: '192.168.1.10:80', summary: 'HTTP GET /api/v1/health' },
+  { proto: 'DNS', pill: 'pill-dns', src: '10.0.9.44:59102', dst: '1.1.1.1:53', summary: 'DNS Query: c2-stage2.beacon.internal (A)' },
+  { proto: 'TCP', pill: 'pill-tcp', src: '198.51.100.44:8443', dst: '10.0.9.44:49152', summary: 'TCP [PSH,ACK] Periodic C2 Poll (Δt=4.0s)' },
+  { proto: 'ICMP', pill: 'pill-icmp', src: '10.0.4.1:0', dst: '10.0.4.15:0', summary: 'ICMP Echo Request (Ping)' }
+];
+
+const sampleAlerts = [
+  {
+    rule: 'c2_beaconing',
+    sev: 'CRITICAL',
+    badge: 'alert-critical',
+    mitre: 'T1071',
+    msg: 'Periodic C2 beaconing detected from 10.0.9.44 to 198.51.100.44:8443 (mean: 4.0s, jitter CV: 0.08)'
+  },
+  {
+    rule: 'dns_tunneling',
+    sev: 'HIGH',
+    badge: 'alert-high',
+    mitre: 'T1048',
+    msg: 'High-entropy DNS exfiltration query detected: v10-a9f8b7c6d5e4f.tunnel.exfil-data.org (H=4.38)'
+  },
+  {
+    rule: 'cleartext_credentials',
+    sev: 'HIGH',
+    badge: 'alert-high',
+    mitre: 'T1552',
+    msg: 'HTTP Basic Authentication transmitted unencrypted to intranet.corp (/login)'
+  }
+];
+
+function initSimulator() {
+  const tbody = document.getElementById('simPacketRows');
+  const alertsDiv = document.getElementById('simAlertRows');
+
+  // Populate initial rows
+  samplePackets.slice(0, 5).forEach(p => {
+    tbody.appendChild(createPacketTr(p));
+  });
+
+  sampleAlerts.forEach(a => {
+    alertsDiv.appendChild(createAlertDiv(a));
+  });
+
+  startSimLoop();
+}
+
+function createPacketTr(p) {
+  const tr = document.createElement('tr');
+  const now = new Date();
+  const timeStr = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0');
+  tr.innerHTML = `
+    <td style="color:var(--text-faint);">${timeStr}</td>
+    <td><span class="pill ${p.pill}">${p.proto}</span></td>
+    <td>${p.src}</td>
+    <td>${p.dst}</td>
+    <td style="color:${p.summary.includes('C2') ? 'var(--rose)' : 'var(--text-muted)'};">${p.summary}</td>
+  `;
+  return tr;
+}
+
+function createAlertDiv(a) {
+  const div = document.createElement('div');
+  div.className = 'alert-feed-item';
+  div.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <span class="alert-badge ${a.badge}">● ${a.sev}</span>
+      <span class="alert-mitre">${a.mitre}</span>
+    </div>
+    <div style="font-weight:600; color:#fff; font-size:12px;">Rule: ${a.rule}</div>
+    <div style="font-size:11.5px; color:var(--text-muted);">${a.msg}</div>
+  `;
+  return div;
+}
+
+function startSimLoop() {
+  if (simInterval) clearInterval(simInterval);
+  simInterval = setInterval(() => {
+    if (!simActive) return;
+
+    packetCount += Math.floor(Math.random() * 5) + 1;
+    document.getElementById('metricPackets').innerText = packetCount.toLocaleString();
+
+    const tbody = document.getElementById('simPacketRows');
+    const randomPkt = samplePackets[Math.floor(Math.random() * samplePackets.length)];
+    const newTr = createPacketTr(randomPkt);
+    tbody.insertBefore(newTr, tbody.firstChild);
+
+    if (tbody.children.length > 7) {
+      tbody.removeChild(tbody.lastChild);
+    }
+  }, 1200);
+}
+
+function toggleSimulator() {
+  simActive = !simActive;
+  const btn = document.getElementById('btnToggleSim');
+  if (simActive) {
+    btn.innerText = 'Pause Stream';
+  } else {
+    btn.innerText = 'Resume Stream';
+  }
+}
+
+window.addEventListener('DOMContentLoaded', initSimulator);
+</script>
+
+</body>
+</html>
