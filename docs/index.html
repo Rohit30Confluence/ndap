@@ -1195,21 +1195,9 @@
         </button>
       </form>
 
-      <!-- Confirmation & Traffic Pipeline Status Box -->
+      <!-- Confirmation Status Box -->
       <div class="modal-status-box" id="modalStatusBox">
-        <div style="font-weight:700; margin-bottom:4px;" id="statusHeader">✅ Dispatching Telemetry...</div>
-        <div style="margin-bottom:8px;" id="statusDetails">Routing inquiry directly to <code>dinde.infosec@gmail.com</code>...</div>
-        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
-          <a id="btnDirectMailto" href="mailto:dinde.infosec@gmail.com" class="btn btn-sm btn-emerald" style="color:#fff;">
-            Open in Email App
-          </a>
-          <button class="btn btn-sm btn-ghost" onclick="copyInquiryText()">
-            📋 Copy Inquiry Details
-          </button>
-        </div>
-        <div style="margin-top:10px; font-size:11.5px; color:var(--text-muted);">
-          Direct Target: <code style="color:var(--cyan);">dinde.infosec@gmail.com</code>
-        </div>
+        <div style="font-weight:700; font-size:14px; text-align:center; padding:10px 0; color:#34d399;" id="statusHeader">Your Request is precessed , Thanks for interest!</div>
       </div>
     </div>
   </div>
@@ -1467,13 +1455,6 @@ ${name}`;
   currentInquirySummary = bodyContent;
 
   const statusBox = document.getElementById('modalStatusBox');
-  const statusHeader = document.getElementById('statusHeader');
-  const statusDetails = document.getElementById('statusDetails');
-  const btnDirect = document.getElementById('btnDirectMailto');
-  btnDirect.href = mailtoUrl;
-
-  statusBox.className = 'modal-status-box success';
-  statusBox.style.display = 'block';
 
   // 3. Asynchronous HTTPS Ingestion Gateway directly to dinde.infosec@gmail.com
   try {
@@ -1498,27 +1479,25 @@ ${name}`;
       })
     });
 
-    if (response.ok) {
-      statusHeader.innerText = '✅ Inquiry Successfully Dispatched!';
-      statusDetails.innerHTML = `Your inquiry was routed directly to <strong>${targetEmail}</strong>. Rohit will reply to <strong>${email}</strong> shortly.`;
-    } else {
-      throw new Error('Fallback to mail client');
+    if (!response.ok) {
+      window.location.href = mailtoUrl;
     }
   } catch (err) {
-    // Graceful traffic management fallback to native mailto client
     window.location.href = mailtoUrl;
-    statusHeader.innerText = '✅ Inquiry Ready in Email Client!';
-    statusDetails.innerHTML = `Opened your mail client to <strong>${targetEmail}</strong>. You can also click below if it did not launch:`;
   } finally {
     btnSubmit.disabled = false;
     btnSubmit.innerHTML = originalBtnText;
+    document.getElementById('inquiryForm').reset();
+    statusBox.className = 'modal-status-box success';
+    statusBox.style.display = 'block';
+    statusBox.innerHTML = '<div style="font-weight:700; font-size:14px; text-align:center; padding:10px 0; color:#34d399;">Your Request is precessed , Thanks for interest!</div>';
   }
 }
 
 function copyInquiryText() {
   if (currentInquirySummary) {
     navigator.clipboard.writeText(currentInquirySummary);
-    alert('Copied inquiry details to clipboard! You can paste it into an email to dinde.infosec@gmail.com');
+    alert('Copied inquiry details to clipboard!');
   }
 }
 
