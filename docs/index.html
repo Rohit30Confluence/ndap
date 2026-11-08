@@ -3,20 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NDAP Cloud — Enterprise Network Detection & Threat Defense as a Service</title>
-<meta name="description" content="Turn-key Network Detection & Analysis Platform (NDAP) as a Service. Zero-overhead Rust edge sensors, automated threat intelligence, C2 beacon hunting, and real-time MITRE ATT&CK alerting.">
+<title>NDAP Sovereign Cloud — Gulf Regional Cyber Defense & Threat Detection as a Service</title>
+<meta name="description" content="Turn-key Network Detection & Analysis Platform (NDAP) as a Service tailored for GCC Sovereign Clouds, Oil & Gas SCADA OT, and SAMA Banking. Zero telemetry leaves national borders.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600&family=DM+Sans:wght@400;500;600&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg-dark: #080b11;
-    --bg-card: #0e141f;
-    --bg-card-hover: #141c2c;
-    --panel-header: #131b29;
-    --border: #1f2a3e;
-    --border-bright: #2d3d59;
-    --text-main: #f1f5f9;
+    --bg-dark: #070a10;
+    --bg-card: #0d131f;
+    --bg-card-hover: #131c2d;
+    --panel-header: #101826;
+    --border: #1e293b;
+    --border-bright: #334155;
+    --text-main: #f8fafc;
     --text-muted: #94a3b8;
     --text-faint: #64748b;
     --cyan: #38bdf8;
@@ -25,11 +25,12 @@
     --emerald-glow: rgba(16, 185, 129, 0.25);
     --amber: #f59e0b;
     --amber-glow: rgba(245, 158, 11, 0.2);
-    --rose: #ef4444;
-    --rose-glow: rgba(239, 68, 68, 0.25);
     --purple: #a855f7;
+    --rose: #ef4444;
+    --gold: #eab308;
     --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-    --sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --sans: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -44,13 +45,15 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  body.dialog-open, body.sentinel-open { overflow: hidden; }
+
   /* Cyber Grid Background */
   body::before {
     content: "";
     position: fixed; inset: 0;
     background-image:
-      linear-gradient(rgba(31, 42, 62, 0.35) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(31, 42, 62, 0.35) 1px, transparent 1px);
+      linear-gradient(rgba(30, 41, 59, 0.35) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(30, 41, 59, 0.35) 1px, transparent 1px);
     background-size: 54px 54px;
     pointer-events: none;
     z-index: 0;
@@ -58,8 +61,8 @@
 
   /* Radial glow spotlight */
   .glow-spotlight {
-    position: fixed; top: -150px; left: 50%; transform: translateX(-50%);
-    width: 900px; height: 500px;
+    position: fixed; top: -180px; left: 50%; transform: translateX(-50%);
+    width: 1000px; height: 600px;
     background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, transparent 70%);
     pointer-events: none;
     z-index: 0;
@@ -68,17 +71,77 @@
   a { color: var(--cyan); text-decoration: none; transition: all 0.15s ease; }
   a:hover { color: #7dd3fc; }
 
-  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 28px; position: relative; z-index: 1; }
   .mono { font-family: var(--mono); }
+
+  /* Opening Loader (ThatJoint Style) */
+  .loader {
+    position: fixed; z-index: 9999; inset: 0;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    background: #05070c; color: #fff;
+    transition: transform 0.65s cubic-bezier(0.77, 0, 0.175, 1), opacity 0.5s ease;
+  }
+  .loader.is-complete {
+    transform: translateY(-100%);
+    pointer-events: none;
+  }
+  .loader-inner { width: min(420px, 86vw); text-align: left; }
+  .loader-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--display); font-size: 24px; letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .loader-head b { font-size: 52px; font-weight: 500; color: var(--cyan); }
+  .loader-track {
+    width: 100%; height: 3px; background: rgba(255, 255, 255, 0.1);
+    margin: 16px 0 12px; position: relative; overflow: hidden;
+  }
+  .loader-bar {
+    position: absolute; top: 0; left: 0; bottom: 0; width: 0%;
+    background: linear-gradient(90deg, #0284c7, #38bdf8);
+    transition: width 0.1s linear;
+  }
+  .loader-note {
+    font-size: 11px; color: var(--text-muted); font-family: var(--mono);
+    display: flex; justify-content: space-between;
+  }
+
+  /* ThatJoint Eyebrow & Split Heading Styling */
+  .eyebrow {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    font-family: var(--mono); color: var(--cyan); margin-bottom: 14px;
+  }
+  .eyebrow span {
+    width: 26px; height: 26px; border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: var(--cyan);
+  }
+  .eyebrow b { font-weight: 600; color: var(--text-muted); }
+
+  .split-heading {
+    font-family: var(--display);
+    font-size: clamp(48px, 6.5vw, 84px);
+    line-height: 0.88;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+    color: #fff;
+    margin-bottom: 24px;
+    font-weight: 500;
+  }
+  .split-heading em {
+    font-style: italic;
+    color: var(--text-muted);
+    font-weight: 400;
+  }
 
   /* Navigation Bar */
   header {
     border-bottom: 1px solid var(--border);
     position: sticky; top: 0;
-    background: rgba(8, 11, 17, 0.94);
-    backdrop-filter: blur(12px);
-    z-index: 50;
-    padding: 16px 0;
+    background: rgba(7, 10, 16, 0.94);
+    backdrop-filter: blur(14px);
+    z-index: 100;
+    padding: 14px 0;
   }
   header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
   
@@ -90,406 +153,353 @@
   .brand-logo {
     width: 32px; height: 32px;
     background: linear-gradient(135deg, #0284c7, #38bdf8);
-    border-radius: 8px;
+    border-radius: 6px;
     display: flex; align-items: center; justify-content: center;
     color: #fff; font-size: 16px; font-weight: 800;
     box-shadow: 0 0 16px var(--cyan-glow);
   }
-  .brand-badge {
-    font-size: 10px; font-weight: 600; padding: 2px 7px;
-    background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3);
-    color: var(--cyan); border-radius: 12px; text-transform: uppercase;
+  .brand-sub { display: flex; flex-direction: column; }
+  .brand-sub span:first-child { font-size: 15px; font-weight: 700; line-height: 1.1; }
+  .brand-sub span:last-child { font-size: 9.5px; color: #34d399; font-weight: 600; letter-spacing: 0.04em; }
+
+  .desktop-nav { display: flex; align-items: center; gap: 20px; font-size: 13px; font-weight: 500; }
+  .desktop-nav a { color: var(--text-muted); transition: color 0.15s ease; }
+  .desktop-nav a:hover { color: #fff; }
+
+  .nav-actions { display: flex; align-items: center; gap: 10px; }
+
+  /* Currency Switcher in Header */
+  .currency-selector-wrap { display: flex; align-items: center; gap: 6px; }
+  .currency-select-hdr {
+    background: #0f172a; border: 1px solid var(--border);
+    border-radius: 6px; color: var(--cyan); padding: 6px 10px;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 600;
+    outline: none; cursor: pointer;
+  }
+  .currency-select-hdr:focus { border-color: var(--cyan); }
+
+  /* Sentinel Command Palette Pill Trigger */
+  .nav-sentinel-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    border-radius: 20px; padding: 6px 14px;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 600;
+    color: #34d399; cursor: pointer; transition: all 0.2s ease;
+  }
+  .nav-sentinel-pill:hover {
+    background: rgba(16, 185, 129, 0.22);
+    border-color: #34d399; transform: translateY(-1px);
+  }
+  .nav-sentinel-pill i {
+    width: 7px; height: 7px; border-radius: 50%; background: #10b981;
+    box-shadow: 0 0 6px #10b981; display: inline-block;
   }
 
-  nav.desktop-nav { display: flex; align-items: center; gap: 24px; }
-  nav.desktop-nav a {
-    color: var(--text-muted); font-size: 13.5px; font-weight: 500;
-  }
-  nav.desktop-nav a:hover { color: #fff; }
-
-  .nav-actions { display: flex; align-items: center; gap: 12px; }
+  /* Buttons */
   .btn {
-    font-family: var(--sans); font-size: 13.5px; font-weight: 600;
-    padding: 9px 18px; border-radius: 6px; cursor: pointer;
     display: inline-flex; align-items: center; gap: 8px;
-    border: 1px solid transparent; transition: all 0.2s ease;
+    padding: 10px 18px; border-radius: 6px; font-size: 13.5px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s ease; border: none; text-decoration: none;
+    font-family: var(--sans);
   }
-  .btn-sm { padding: 6px 12px; font-size: 12.5px; }
-  .btn-ghost {
-    background: transparent; color: var(--text-main);
-    border-color: var(--border-bright);
-  }
-  .btn-ghost:hover { background: var(--bg-card); border-color: var(--cyan); color: #fff; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 4px; }
   .btn-primary {
     background: linear-gradient(135deg, #0284c7, #0284c7);
-    color: #fff; box-shadow: 0 0 16px var(--cyan-glow);
-    border-color: #38bdf8;
+    color: #fff; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.35);
   }
-  .btn-primary:hover {
-    background: linear-gradient(135deg, #0369a1, #0284c7);
-    box-shadow: 0 0 22px rgba(56, 189, 248, 0.45);
-  }
+  .btn-primary:hover { background: #0369a1; transform: translateY(-1px); }
   .btn-emerald {
-    background: linear-gradient(135deg, #059669, #10b981);
-    color: #fff; border-color: #34d399; box-shadow: 0 0 16px var(--emerald-glow);
+    background: #059669; color: #fff;
+    box-shadow: 0 2px 10px rgba(5, 150, 105, 0.35);
   }
-  .btn-emerald:hover {
-    box-shadow: 0 0 22px rgba(16, 185, 129, 0.45);
+  .btn-emerald:hover { background: #047857; transform: translateY(-1px); }
+  .btn-ghost {
+    background: transparent; color: var(--text-main);
+    border: 1px solid var(--border);
   }
+  .btn-ghost:hover { background: rgba(255, 255, 255, 0.05); border-color: var(--border-bright); color: #fff; }
 
-  /* Hero Section */
+  /* Hero Section (ThatJoint Style) */
   .hero {
-    padding: 84px 0 60px;
-    text-align: center;
+    padding: clamp(60px, 8vw, 110px) 0 60px;
     position: relative;
   }
-  .hero-tag {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 5px 14px; border-radius: 20px;
-    background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);
-    color: var(--emerald); font-family: var(--mono); font-size: 12px;
-    margin-bottom: 24px;
+  .arabic-accent {
+    display: inline-block;
+    color: #34d399; font-size: 13.5px; font-weight: 600; letter-spacing: 0.02em;
+    background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25);
+    padding: 4px 14px; border-radius: 20px; margin-bottom: 22px;
   }
-  .live-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: var(--emerald); box-shadow: 0 0 8px var(--emerald);
-    animation: blink 2s infinite;
-  }
-  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-
-  h1.hero-title {
-    font-size: clamp(34px, 5.2vw, 56px);
-    font-weight: 800; line-height: 1.15; letter-spacing: -0.03em;
-    color: #fff; max-width: 880px; margin: 0 auto;
-  }
-  h1.hero-title span.accent-grad {
-    background: linear-gradient(135deg, #38bdf8, #818cf8, #34d399);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  }
-  p.hero-desc {
-    font-size: clamp(16px, 2vw, 19px); color: var(--text-muted);
-    max-width: 740px; margin: 24px auto 36px; line-height: 1.6;
+  .hero-desc {
+    font-size: clamp(16px, 1.8vw, 19px);
+    color: var(--text-muted);
+    max-width: 780px;
+    line-height: 1.65;
+    margin-bottom: 34px;
   }
   .hero-ctas {
-    display: flex; justify-content: center; align-items: center;
-    gap: 16px; flex-wrap: wrap; margin-bottom: 44px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-bottom: 38px;
   }
-  .hero-install-preview {
-    max-width: 680px; margin: 0 auto;
-    background: #06090f; border: 1px solid var(--border);
-    border-radius: 8px; padding: 12px 18px;
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 12px; font-family: var(--mono); font-size: 13px; color: var(--text-muted);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+
+  /* Hero Telemetry Strip */
+  .hero-metrics-strip {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px; border-top: 1px solid var(--border); padding-top: 28px;
+    margin-top: 10px;
   }
-  .hero-install-preview code { color: #e2e8f0; overflow-x: auto; white-space: nowrap; }
-  .copy-btn {
-    background: rgba(255,255,255,0.06); border: 1px solid var(--border-bright);
-    color: var(--cyan); padding: 5px 12px; border-radius: 4px;
-    font-size: 11.5px; font-family: var(--mono); cursor: pointer;
+  .metric-box {
+    background: rgba(13, 19, 31, 0.6); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px 18px;
+  }
+  .metric-label {
+    font-size: 10px; font-family: var(--mono); text-transform: uppercase;
+    color: var(--text-faint); letter-spacing: 0.08em; margin-bottom: 4px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .metric-val {
+    font-size: 24px; font-weight: 700; color: #fff; font-family: var(--mono);
+  }
+  .metric-sub { font-size: 11px; color: #34d399; margin-top: 2px; }
+
+  /* 3D Sovereign Cyber Mesh Section */
+  .section-pad { padding: clamp(60px, 9vw, 120px) 0; position: relative; }
+  .mesh-container {
+    background: #090e18; border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden; position: relative;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.85);
+  }
+  .mesh-head {
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+    gap: 14px; padding: 20px 24px; border-bottom: 1px solid var(--border);
+    background: #0c1422;
+  }
+  .mesh-head-title h3 {
+    font-family: var(--display); font-size: 26px; text-transform: uppercase; font-weight: 600; color: #fff;
+  }
+  .mesh-head-title p { font-size: 12.5px; color: var(--text-muted); }
+
+  .mesh-nav { display: flex; gap: 8px; flex-wrap: wrap; }
+  .mesh-btn {
+    background: #070a10; border: 1px solid var(--border);
+    color: var(--text-muted); padding: 7px 14px; border-radius: 4px;
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s ease;
+  }
+  .mesh-btn.active, .mesh-btn:hover {
+    color: #fff; border-color: var(--cyan); background: rgba(56, 189, 248, 0.12);
+  }
+
+  .mesh-viewport {
+    height: 540px; position: relative; cursor: grab; background: radial-gradient(circle at center, #0a111e 0%, #06090e 100%);
+  }
+  .mesh-viewport:active { cursor: grabbing; }
+
+  .mesh-telemetry-hud {
+    position: absolute; bottom: 20px; left: 20px;
+    background: rgba(9, 14, 24, 0.92); border: 1px solid var(--border-bright);
+    border-radius: 8px; padding: 16px 20px; max-width: 380px;
+    backdrop-filter: blur(12px); box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
+    display: none; z-index: 10;
+  }
+  .mesh-telemetry-hint {
+    position: absolute; top: 16px; right: 16px;
+    font-family: var(--mono); font-size: 10.5px; color: var(--text-faint);
+    background: rgba(7, 10, 16, 0.7); padding: 4px 10px; border-radius: 4px;
+    border: 1px solid var(--border); pointer-events: none;
+  }
+
+  /* Platform Operating Modes (ThatJoint Platform Tabs) */
+  .platform-tabs {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+    margin-bottom: 28px; background: #080c14;
+  }
+  @media (max-width: 860px) { .platform-tabs { grid-template-columns: 1fr 1fr; } }
+  .platform-tab {
+    padding: 16px 20px; background: transparent; border: none;
+    border-right: 1px solid var(--border); text-align: left;
+    cursor: pointer; transition: all 0.2s ease;
+  }
+  .platform-tab:last-child { border-right: none; }
+  .platform-tab span {
+    font-family: var(--mono); font-size: 10.5px; color: var(--text-faint); display: block; margin-bottom: 4px;
+  }
+  .platform-tab strong {
+    font-family: var(--display); font-size: 20px; color: var(--text-muted); display: block; text-transform: uppercase;
+  }
+  .platform-tab.active {
+    background: #0d1522;
+  }
+  .platform-tab.active span { color: var(--cyan); }
+  .platform-tab.active strong { color: #fff; }
+
+  .platform-panel {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 32px;
+    display: grid; grid-template-columns: 1.2fr 1fr; gap: 36px;
+  }
+  @media (max-width: 900px) { .platform-panel { grid-template-columns: 1fr; } }
+  .panel-left h3 {
+    font-family: var(--display); font-size: 42px; line-height: 0.95;
+    text-transform: uppercase; color: #fff; margin-bottom: 16px;
+  }
+  .panel-left p { color: var(--text-muted); font-size: 15px; line-height: 1.6; margin-bottom: 24px; }
+  .panel-features { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .panel-features li {
+    display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: #e2e8f0;
+  }
+  .panel-features li i { color: #34d399; font-style: normal; font-weight: bold; }
+
+  .panel-right {
+    background: #070a11; border: 1px solid var(--border); border-radius: 8px;
+    padding: 20px; font-family: var(--mono); font-size: 12px;
+  }
+  .panel-right-title {
+    font-size: 10px; color: var(--cyan); text-transform: uppercase; letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 14px;
+    display: flex; justify-content: space-between;
+  }
+  .panel-metrics-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px;
+  }
+  .panel-metric-item { background: #0c121e; padding: 12px; border-radius: 6px; }
+  .panel-metric-item small { color: var(--text-faint); font-size: 10px; display: block; }
+  .panel-metric-item b { font-size: 18px; color: #fff; }
+
+  /* Operations Carousel (ThatJoint Style) */
+  .ops-carousel-wrap {
+    position: relative; margin-top: 40px;
+  }
+  .ops-head {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 24px;
+  }
+  .ops-controls { display: flex; gap: 10px; }
+  .ops-btn {
+    width: 44px; height: 44px; border: 1px solid var(--border);
+    border-radius: 50%; background: #0d131f; color: #fff; font-size: 18px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
     transition: all 0.15s ease;
   }
-  .copy-btn:hover { background: rgba(56, 189, 248, 0.15); border-color: var(--cyan); }
+  .ops-btn:hover { border-color: var(--cyan); background: rgba(56, 189, 248, 0.1); }
 
-  /* Trust Bar */
-  .trust-bar {
-    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-    padding: 24px 0; background: rgba(14, 20, 31, 0.6);
+  .ops-track {
+    display: flex; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory;
+    scrollbar-width: none; padding-bottom: 10px;
   }
-  .trust-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 20px; text-align: center;
-  }
-  .trust-stat { display: flex; flex-direction: column; gap: 4px; }
-  .trust-stat .num {
-    font-size: 26px; font-weight: 800; font-family: var(--mono);
-    color: #fff;
-  }
-  .trust-stat .lbl { font-size: 12px; color: var(--text-faint); text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; }
+  .ops-track::-webkit-scrollbar { display: none; }
 
-  /* Sections General */
-  section { padding: 80px 0; border-bottom: 1px solid var(--border); }
-  .section-tag {
-    font-family: var(--mono); font-size: 11.5px; text-transform: uppercase;
-    color: var(--cyan); letter-spacing: 0.1em; font-weight: 600; margin-bottom: 8px;
+  .ops-slide {
+    flex: 0 0 min(360px, 85vw); scroll-snap-align: start;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 26px; display: flex; flex-direction: column;
+    justify-content: space-between; min-height: 380px; position: relative;
+    transition: border-color 0.2s;
   }
-  .section-title {
-    font-size: clamp(26px, 3.5vw, 36px); font-weight: 700; color: #fff;
-    letter-spacing: -0.02em; margin-bottom: 16px;
+  .ops-slide:hover { border-color: var(--cyan); }
+  .ops-step-num {
+    font-family: var(--display); font-size: 38px; color: var(--cyan); line-height: 1; margin-bottom: 18px;
   }
-  .section-subtitle {
-    font-size: 16px; color: var(--text-muted); max-width: 680px; line-height: 1.6;
-    margin-bottom: 48px;
+  .ops-slide h4 {
+    font-family: var(--display); font-size: 26px; text-transform: uppercase; color: #fff; margin-bottom: 12px;
+  }
+  .ops-slide p { font-size: 13.5px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; }
+  .ops-code {
+    background: #06090e; border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 12px; font-family: var(--mono); font-size: 11px; color: #38bdf8;
   }
 
-  /* Interactive Dashboard Simulator */
-  .dash-preview-panel {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 12px; overflow: hidden;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+  /* GCC Sovereign Compliance Matrix Grid */
+  .compliance-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px; margin-top: 36px;
+  }
+  .compliance-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 28px; position: relative;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .compliance-card:hover { transform: translateY(-3px); border-color: var(--cyan); }
+  .comp-badge {
+    display: inline-block; font-size: 10px; font-family: var(--mono); font-weight: 700;
+    padding: 3px 8px; border-radius: 4px; margin-bottom: 14px;
+    background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); color: #34d399;
+  }
+  .compliance-card h4 {
+    font-family: var(--display); font-size: 24px; text-transform: uppercase; color: #fff; margin-bottom: 10px;
+  }
+  .compliance-card p { font-size: 13.5px; color: var(--text-muted); line-height: 1.6; }
+
+  /* Simulator Section (Preserved) */
+  .dash-window {
+    background: #090e18; border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden; margin-top: 30px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
   }
   .dash-topbar {
     background: var(--panel-header); border-bottom: 1px solid var(--border);
-    padding: 12px 20px; display: flex; align-items: center; justify-content: space-between;
-    flex-wrap: wrap; gap: 12px;
+    padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;
   }
-  .dash-topbar-left { display: flex; align-items: center; gap: 12px; }
-  .dash-dots { display: flex; gap: 6px; }
-  .dash-dot { width: 10px; height: 10px; border-radius: 50%; }
-  .dash-dot.r { background: #ef4444; } .dash-dot.y { background: #f59e0b; } .dash-dot.g { background: #10b981; }
-  .dash-title { font-family: var(--mono); font-size: 12.5px; font-weight: 600; color: var(--text-muted); }
-  .dash-sim-badge {
-    font-size: 11px; font-family: var(--mono); padding: 3px 8px; border-radius: 12px;
-    background: rgba(16, 185, 129, 0.12); color: var(--emerald); border: 1px solid rgba(16, 185, 129, 0.3);
+  .dash-split {
+    display: grid; grid-template-columns: 1.4fr 1fr;
   }
-
-  .dash-body { padding: 20px; }
-  .dash-metric-cards {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 14px; margin-bottom: 20px;
+  @media (max-width: 900px) { .dash-split { grid-template-columns: 1fr; } }
+  .dash-left { border-right: 1px solid var(--border); padding: 20px; }
+  .dash-right { padding: 20px; background: #06090e; }
+  .sim-table {
+    width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11px;
   }
-  .dash-metric {
-    background: #090e17; border: 1px solid var(--border);
-    border-radius: 8px; padding: 12px 16px;
+  .sim-table th {
+    text-align: left; color: var(--text-faint); padding: 8px 6px; border-bottom: 1px solid var(--border);
   }
-  .dash-metric .m-val { font-size: 22px; font-weight: 700; font-family: var(--mono); color: #fff; }
-  .dash-metric .m-lbl { font-size: 11px; color: var(--text-faint); text-transform: uppercase; font-weight: 600; margin-top: 2px; }
-
-  .dash-grid-split {
-    display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 16px;
-  }
-  @media (max-width: 900px) { .dash-grid-split { grid-template-columns: 1fr; } }
-
-  .dash-subpanel {
-    background: #090e17; border: 1px solid var(--border); border-radius: 8px;
-    overflow: hidden; display: flex; flex-direction: column;
-  }
-  .dash-subpanel-head {
-    padding: 10px 14px; background: rgba(255,255,255,0.02);
-    border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 600;
-    font-family: var(--mono); display: flex; justify-content: space-between; align-items: center;
-  }
-  .dash-table-wrap { overflow-x: auto; max-height: 280px; }
-  table.dash-table {
-    width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11.5px;
-  }
-  table.dash-table th {
-    text-align: left; padding: 8px 12px; color: var(--text-faint);
-    border-bottom: 1px solid var(--border); background: #06090e; font-size: 10.5px; text-transform: uppercase;
-  }
-  table.dash-table td {
-    padding: 8px 12px; border-bottom: 1px solid rgba(31, 42, 62, 0.4);
-    color: var(--text-muted); white-space: nowrap;
-  }
-  table.dash-table tr:hover td { background: rgba(56, 189, 248, 0.04); color: #fff; }
-
-  .pill {
-    display: inline-block; padding: 2px 6px; border-radius: 4px;
-    font-size: 10px; font-weight: 700; text-transform: uppercase;
-  }
-  .pill-tcp { background: rgba(56, 189, 248, 0.15); color: var(--cyan); }
-  .pill-dns { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
-  .pill-http { background: rgba(16, 185, 129, 0.15); color: var(--emerald); }
-  .pill-icmp { background: rgba(245, 158, 11, 0.15); color: var(--amber); }
-
-  .alert-feed-item {
-    padding: 10px 14px; border-bottom: 1px solid rgba(31, 42, 62, 0.4);
-    display: flex; flex-direction: column; gap: 4px; font-size: 12px;
-  }
-  .alert-feed-item:last-child { border-bottom: none; }
-  .alert-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 2px 6px; border-radius: 4px; font-size: 10.5px; font-weight: 700;
-    font-family: var(--mono); width: fit-content;
-  }
-  .alert-critical { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-  .alert-high { background: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3); }
-  .alert-mitre {
-    font-family: var(--mono); font-size: 10.5px; color: var(--cyan);
-    background: rgba(56, 189, 248, 0.1); padding: 1px 5px; border-radius: 3px;
+  .sim-table td { padding: 8px 6px; border-bottom: 1px solid rgba(31, 42, 62, 0.5); }
+  .sim-alert-card {
+    background: #0f1623; border: 1px solid rgba(239, 68, 68, 0.4);
+    border-left: 3px solid #ef4444; border-radius: 6px; padding: 12px; margin-bottom: 10px;
+    font-size: 12px;
   }
 
-  /* SaaS Value Features */
-  .feature-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 24px;
+  /* Multi-Currency Pricing Section */
+  .pricing-header { text-align: center; max-width: 700px; margin: 0 auto 40px; }
+  .pricing-switcher-bar {
+    display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 24px; flex-wrap: wrap;
   }
-  .feature-card {
-    background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: 10px; padding: 28px; transition: all 0.2s ease;
-    display: flex; flex-direction: column; gap: 14px;
-  }
-  .feature-card:hover {
-    border-color: var(--border-bright); background: var(--bg-card-hover);
-    transform: translateY(-2px);
-  }
-  .feature-icon {
-    width: 44px; height: 44px; border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px; margin-bottom: 6px;
-  }
-  .icon-c2 { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-  .icon-intel { background: rgba(56, 189, 248, 0.15); color: var(--cyan); border: 1px solid rgba(56, 189, 248, 0.3); }
-  .icon-priv { background: rgba(16, 185, 129, 0.15); color: var(--emerald); border: 1px solid rgba(16, 185, 129, 0.3); }
-  .icon-scale { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
-  .icon-cloud { background: rgba(245, 158, 11, 0.15); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.3); }
-  .icon-api { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); }
-  
-  .feature-card h3 { font-size: 18px; font-weight: 700; color: #fff; }
-  .feature-card p { font-size: 14.5px; color: var(--text-muted); line-height: 1.6; }
-
-  /* Pricing Section & Multi-Currency Controls */
-  .pricing-header { text-align: center; max-width: 820px; margin: 0 auto 48px; }
-  
-  .pricing-controls {
-    display: flex; justify-content: center; align-items: center;
-    gap: 16px; flex-wrap: wrap; margin-top: 24px;
-  }
-  
-  .currency-picker-wrap {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: #0d131d; border: 1px solid var(--border);
-    padding: 6px 14px; border-radius: 30px; font-size: 13px; font-weight: 600;
-  }
-  .currency-select {
-    background: transparent; color: var(--cyan); border: none;
-    font-family: var(--mono); font-size: 13px; font-weight: 700;
-    cursor: pointer; outline: none;
-  }
-  .currency-select option {
-    background: #0d131d; color: var(--text-main);
-  }
-
   .billing-toggle {
-    display: inline-flex; align-items: center; gap: 10px;
-    background: #0d131d; border: 1px solid var(--border);
-    padding: 6px 14px; border-radius: 30px;
-    font-size: 13px; font-weight: 600;
+    display: flex; background: #090e18; border: 1px solid var(--border); border-radius: 20px; padding: 3px;
   }
-  .billing-toggle span.save-badge {
-    background: rgba(16, 185, 129, 0.15); color: var(--emerald);
-    padding: 2px 8px; border-radius: 12px; font-size: 11px;
+  .billing-btn {
+    background: transparent; border: none; color: var(--text-muted);
+    padding: 6px 14px; font-size: 12px; border-radius: 16px; cursor: pointer; font-weight: 600;
   }
-  
+  .billing-btn.active { background: #0284c7; color: #fff; }
+
   .pricing-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 24px; align-items: stretch;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px; margin-top: 20px;
   }
   .pricing-card {
     background: var(--bg-card); border: 1px solid var(--border);
     border-radius: 12px; padding: 36px 30px; display: flex; flex-direction: column;
-    position: relative; transition: all 0.2s ease;
+    justify-content: space-between; position: relative;
   }
   .pricing-card.featured {
-    border-color: var(--cyan);
-    box-shadow: 0 0 30px rgba(56, 189, 248, 0.15);
-    background: linear-gradient(180deg, #101826 0%, #0e141f 100%);
+    border-color: var(--cyan); box-shadow: 0 0 35px rgba(56, 189, 248, 0.15);
   }
-  .popular-tag {
-    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
-    background: linear-gradient(135deg, #0284c7, #38bdf8);
-    color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase;
-    padding: 3px 12px; border-radius: 12px; letter-spacing: 0.05em;
+  .pricing-plan-badge {
+    position: absolute; top: 18px; right: 20px; font-size: 10px; font-weight: 700;
+    padding: 3px 8px; border-radius: 4px; background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(56, 189, 248, 0.3); color: var(--cyan);
   }
-  .plan-name { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 6px; }
-  .plan-desc { font-size: 13.5px; color: var(--text-muted); margin-bottom: 24px; min-height: 40px; }
-  .plan-price { display: flex; align-items: baseline; gap: 6px; margin-bottom: 24px; }
-  .plan-price .curr { font-size: 22px; font-weight: 700; color: #fff; }
-  .plan-price .val { font-size: 44px; font-weight: 800; font-family: var(--mono); color: #fff; }
-  .plan-price .cycle { font-size: 13.5px; color: var(--text-faint); }
-  
-  .plan-features { list-style: none; margin-bottom: 32px; flex: 1; display: flex; flex-direction: column; gap: 12px; }
-  .plan-features li {
-    font-size: 13.5px; color: var(--text-main); display: flex; align-items: flex-start; gap: 10px;
+  .price-amount {
+    font-size: 46px; font-weight: 700; font-family: var(--mono); color: #fff; margin: 16px 0 6px;
   }
-  .plan-features li span.check { color: var(--emerald); font-weight: 800; flex-shrink: 0; }
+  .price-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 24px; }
+  .price-features { list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 13px; color: #cbd5e1; margin-bottom: 30px; }
+  .price-features li { display: flex; align-items: center; gap: 8px; }
+  .price-features li i { color: #34d399; font-style: normal; }
 
-  /* 60-Second Onboarding / Installation Guide */
-  .install-box {
-    background: #06090e; border: 1px solid var(--border);
-    border-radius: 10px; overflow: hidden;
-  }
-  .install-tabs {
-    display: flex; border-bottom: 1px solid var(--border); background: var(--panel-header);
-    overflow-x: auto;
-  }
-  .install-tab-btn {
-    padding: 12px 20px; font-family: var(--mono); font-size: 12.5px; font-weight: 600;
-    color: var(--text-muted); background: none; border: none; cursor: pointer;
-    border-bottom: 2px solid transparent; white-space: nowrap;
-  }
-  .install-tab-btn.active { color: var(--cyan); border-bottom-color: var(--cyan); background: #06090e; }
-  .install-content { padding: 24px; }
-  .install-step-header { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 12px; }
-  .cmd-block {
-    background: #020408; border: 1px solid var(--border); border-radius: 6px;
-    padding: 14px 18px; font-family: var(--mono); font-size: 13px; color: #e2e8f0;
-    display: flex; justify-content: space-between; align-items: center; gap: 16px;
-    overflow-x: auto; margin-bottom: 16px;
-  }
-  .cmd-block code { white-space: nowrap; color: #38bdf8; }
-
-  /* Architecture & Privacy */
-  .arch-strip {
-    background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: 12px; padding: 36px; display: grid; grid-template-columns: 1fr 1fr;
-    gap: 36px; align-items: center;
-  }
-  @media (max-width: 850px) { .arch-strip { grid-template-columns: 1fr; } }
-  .arch-points { display: flex; flex-direction: column; gap: 18px; }
-  .arch-item { display: flex; gap: 14px; }
-  .arch-item .bullet {
-    width: 28px; height: 28px; border-radius: 6px; background: rgba(56, 189, 248, 0.1);
-    color: var(--cyan); display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-family: var(--mono); font-size: 12px; flex-shrink: 0;
-  }
-  .arch-item h4 { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 4px; }
-  .arch-item p { font-size: 13.5px; color: var(--text-muted); }
-
-  /* Integrations */
-  .integrations-row {
-    display: flex; justify-content: center; align-items: center;
-    gap: 24px; flex-wrap: wrap; margin-top: 32px; opacity: 0.9;
-  }
-  .integration-badge {
-    display: flex; align-items: center; gap: 8px; font-family: var(--mono);
-    font-size: 13px; color: var(--text-muted); background: var(--bg-card);
-    padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px;
-  }
-
-  /* FAQ Accordion */
-  .faq-list { max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
-  .faq-item {
-    background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
-    overflow: hidden;
-  }
-  .faq-question {
-    padding: 18px 22px; font-weight: 600; font-size: 15.5px; color: #fff;
-    cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-  }
-  .faq-question:hover { background: var(--bg-card-hover); }
-  .faq-answer {
-    padding: 0 22px 18px; font-size: 14px; color: var(--text-muted); line-height: 1.6;
-    display: none;
-  }
-  .faq-item.open .faq-answer { display: block; }
-  .faq-item.open .faq-icon { transform: rotate(45deg); color: var(--cyan); }
-  .faq-icon { font-family: var(--mono); font-size: 16px; transition: transform 0.2s ease; }
-
-  /* CTA Banner */
-  .cta-banner {
-    background: linear-gradient(135deg, rgba(2, 132, 199, 0.25), rgba(16, 185, 129, 0.18));
-    border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 12px;
-    padding: 48px 36px; text-align: center; margin-top: 40px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-  }
-  .cta-banner h2 { font-size: 32px; font-weight: 800; color: #fff; margin-bottom: 14px; }
-  .cta-banner p { font-size: 16px; color: var(--text-muted); max-width: 620px; margin: 0 auto 28px; }
-
-  /* ThatJoint Minimal Pilot & Consultation Request Dialog */
-  body.dialog-open { overflow: hidden; }
-
+  /* ThatJoint Minimal Pilot Dialog */
   dialog#demoDialog {
     width: min(720px, calc(100% - 32px));
     max-height: 94vh;
@@ -500,7 +510,7 @@
     position: fixed;
     inset: 0;
     margin: auto;
-    z-index: 1000;
+    z-index: 3000;
     box-shadow: 0 30px 70px rgba(0, 0, 0, 0.85);
   }
   dialog#demoDialog::backdrop {
@@ -550,8 +560,8 @@
     border-color: #2B2B2B;
   }
   dialog#demoDialog h2 {
-    margin: 40px 0 16px;
-    font: 500 clamp(44px, 7vw, 76px)/0.88 'Barlow Condensed', 'Arial Narrow', sans-serif;
+    margin: 36px 0 16px;
+    font: 500 clamp(44px, 7vw, 76px)/0.88 var(--display);
     letter-spacing: -0.045em;
     text-transform: uppercase;
     color: #2B2B2B;
@@ -564,7 +574,7 @@
   #dialogDescription {
     color: #7A7A7A;
     font-size: 13.5px;
-    font-family: 'DM Sans', -apple-system, sans-serif;
+    font-family: var(--sans);
     line-height: 1.5;
   }
   .form-grid {
@@ -572,7 +582,7 @@
     grid-template-columns: 110px 1fr;
     gap: 12px 24px;
     align-items: center;
-    margin-top: 36px;
+    margin-top: 34px;
   }
   .form-grid label {
     font-size: 9.5px;
@@ -592,7 +602,7 @@
     background: transparent;
     color: #2B2B2B;
     font-size: 14px;
-    font-family: 'DM Sans', -apple-system, sans-serif;
+    font-family: var(--sans);
   }
   .form-grid input:focus, .form-grid select:focus {
     border-color: #A459FF;
@@ -612,37 +622,28 @@
     font-size: 11px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    font-family: 'DM Sans', var(--sans);
+    font-family: var(--sans);
     font-weight: 700;
     cursor: pointer;
     transition: opacity 0.2s, background 0.2s;
   }
-  .submit-button:hover {
-    opacity: 0.92;
-  }
-  .submit-button b {
-    font-size: 20px;
-    font-weight: 400;
-  }
+  .submit-button:hover { opacity: 0.92; }
+  .submit-button b { font-size: 20px; font-weight: 400; }
   dialog#demoDialog form > small {
-    display: block;
-    margin-top: 14px;
-    color: #7A7A7A;
-    font-size: 10px;
-    font-family: 'DM Sans', var(--sans);
+    display: block; margin-top: 14px; color: #7A7A7A; font-size: 10px; font-family: var(--sans);
   }
   @media (max-width: 600px) {
     dialog#demoDialog form { padding: 20px; }
     .form-grid { grid-template-columns: 1fr; gap: 8px; }
     .form-grid input, .form-grid select { margin-bottom: 8px; }
-    dialog#demoDialog h2 { margin: 28px 0 12px; font-size: clamp(38px, 11vw, 52px); }
+    dialog#demoDialog h2 { margin: 26px 0 12px; font-size: clamp(36px, 10vw, 50px); }
   }
 
   /* ThatJoint Notification Toast */
   .toast {
     position: fixed;
     visibility: hidden;
-    z-index: 3000;
+    z-index: 3500;
     right: 24px;
     bottom: 24px;
     max-width: calc(100% - 48px);
@@ -652,7 +653,7 @@
     border: 1px solid rgba(52, 211, 153, 0.4);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
     font-size: 13px;
-    font-family: 'DM Sans', var(--sans);
+    font-family: var(--sans);
     font-weight: 600;
     transform: translateY(150%);
     transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s 0.4s;
@@ -666,16 +667,15 @@
 
   /* Footer */
   footer {
-    border-top: 1px solid var(--border); padding: 50px 0 30px;
-    background: #05070b; font-size: 13px; color: var(--text-faint);
+    border-top: 1px solid var(--border); padding: 60px 0 35px;
+    background: #05070c; font-size: 13px; color: var(--text-faint);
   }
   .footer-grid {
-    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 36px;
-    margin-bottom: 40px;
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 36px; margin-bottom: 40px;
   }
   @media (max-width: 800px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
   .footer-col h5 {
-    color: #fff; font-size: 13.5px; font-weight: 600; margin-bottom: 14px;
+    color: #fff; font-size: 13px; font-weight: 600; margin-bottom: 14px;
     font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.05em;
   }
   .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
@@ -689,32 +689,66 @@
 </head>
 <body>
 
+<!-- Opening ThatJoint Counter Loader -->
+<div class="loader" id="loader" aria-hidden="true">
+  <div class="loader-inner">
+    <div class="loader-head">
+      <span>NDAP CLOUD</span>
+      <b id="loaderCount">00</b>
+    </div>
+    <div class="loader-track"><div class="loader-bar" id="loaderBar"></div></div>
+    <div class="loader-note">
+      <span>SOVEREIGN MESH & WIRE-SPEED SENSOR</span>
+      <span>GCC / MEA READY</span>
+    </div>
+  </div>
+</div>
+
 <div class="glow-spotlight"></div>
 
-<!-- Top Sticky Navigation -->
+<!-- Top Navigation -->
 <header>
   <div class="wrap">
     <div class="brand">
       <div class="brand-logo">N</div>
-      <span>NDAP Cloud</span>
-      <span class="brand-badge">SaaS</span>
+      <div class="brand-sub">
+        <span>NDAP Sovereign</span>
+        <span>درع السيادة السحابية</span>
+      </div>
     </div>
 
     <nav class="desktop-nav">
-      <a href="#simulator">Live Console</a>
-      <a href="#features">Capabilities</a>
-      <a href="#deploy">Quickstart</a>
-      <a href="#architecture">Zero-Trust Flow</a>
+      <a href="#platform">Platform</a>
+      <a href="#mesh">3D Sovereign Mesh</a>
+      <a href="#operations">Operations</a>
+      <a href="#compliance">GCC Compliance</a>
+      <a href="#simulator">Simulator</a>
       <a href="#pricing">Pricing</a>
-      <a href="#faq">FAQ</a>
     </nav>
 
     <div class="nav-actions">
-      <button class="btn btn-sm btn-ghost" onclick="openInquiryModal('talk')">
-        💬 Have a Talk
+      <!-- Currency Switcher -->
+      <div class="currency-selector-wrap">
+        <select class="currency-select-hdr" id="headerCurrencySelect" onchange="changeCurrency(this.value)">
+          <option value="AED">AED (د.إ)</option>
+          <option value="SAR" selected>SAR (ر.س)</option>
+          <option value="QAR">QAR (ر.ق)</option>
+          <option value="KWD">KWD (د.ك)</option>
+          <option value="USD">USD ($)</option>
+          <option value="EUR">EUR (€)</option>
+          <option value="GBP">GBP (£)</option>
+          <option value="INR">INR (₹)</option>
+        </select>
+      </div>
+
+      <!-- Sentinel [⌘K] Pill Trigger -->
+      <button type="button" class="nav-sentinel-pill" id="navSentinelBtn" onclick="toggleSentinelHud()" title="Open Sovereign Sentinel Terminal [⌘K]">
+        <i></i><span>[⌘K] Sentinel</span>
       </button>
+
+      <!-- Pilot Request Button -->
       <button class="btn btn-sm btn-primary" onclick="openInquiryModal('demo')">
-        📅 Schedule Demo →
+        Request a Pilot ↗
       </button>
     </div>
   </div>
@@ -722,144 +756,358 @@
 
 <main>
   <!-- Hero Section -->
-  <section class="hero">
+  <section class="hero" id="top">
     <div class="wrap">
-      <div class="hero-tag">
-        <span class="live-dot"></span>
-        <span>MANAGED THREAT INTELLIGENCE & WIRE-SPEED DETECTION</span>
+      <div class="eyebrow">
+        <span>01</span><b>Sovereign Cloud & OT Security</b>
       </div>
 
-      <h1 class="hero-title">
-        Enterprise Network Threat Defense <br>
-        <span class="accent-grad">Delivered as a Service.</span>
+      <div class="arabic-accent">
+        🇸🇦 🇦🇪 🇶🇦 درع السيادة السحابية لدول مجلس التعاون الخليجي · زمن استجابة &lt; 3 مللي ثانية
+      </div>
+
+      <h1 class="split-heading">
+        Sovereign cyber defense.<br />
+        <em>At wire speed.</em>
       </h1>
 
       <p class="hero-desc">
-        Stop intrusion attempts, C2 beaconing, and DNS exfiltration directly on the wire.
-        Deploy our ultra-lightweight, memory-safe Rust sensor in 60 seconds and gain instant cloud SOC visibility with zero maintenance overhead.
+        Turn-key Network Detection & Threat Defense as a Service tailored for GCC Sovereign Clouds, Financial Institutions, and Critical Energy Infrastructure. Zero unredacted telemetry leaves your national borders.
       </p>
 
       <div class="hero-ctas">
-        <button class="btn btn-primary" onclick="openInquiryModal('demo')" style="padding: 12px 24px; font-size: 15px;">
-          📅 Schedule Live Demo
+        <button class="btn btn-primary" onclick="openInquiryModal('demo')" style="padding:14px 28px; font-size:15px;">
+          Request a Pilot ↗
         </button>
-        <button class="btn btn-emerald" onclick="openInquiryModal('talk')" style="padding: 12px 24px; font-size: 15px;">
-          💬 Have a Talk with Founder
-        </button>
-        <a href="#deploy" class="btn btn-ghost" style="padding: 12px 24px; font-size: 15px;">
-          🚀 60s Sensor Quickstart
+        <a href="#mesh" class="btn btn-ghost" style="padding:14px 28px; font-size:15px;">
+          Explore 3D Mesh ↓
         </a>
+        <button class="btn btn-emerald" onclick="toggleSentinelHud()" style="padding:14px 28px; font-size:15px;">
+          🛡️ Launch Sentinel HUD [⌘K]
+        </button>
       </div>
 
-      <div class="hero-install-preview">
-        <span style="color:var(--cyan);">$</span>
-        <code id="heroCmdText">curl -sSL https://get.ndap.cloud/install.sh | sudo bash -s -- --api-key ndap_demo_live</code>
-        <button class="copy-btn" onclick="copyHeroCmd()">Copy</button>
+      <!-- Hero Telemetry Strip -->
+      <div class="hero-metrics-strip">
+        <div class="metric-box">
+          <div class="metric-label">Regional Latency <span>⚡</span></div>
+          <div class="metric-val">1.8 ms</div>
+          <div class="metric-sub">Riyadh & Dubai Sovereign Hubs</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">Data Sovereignty <span>🛡️</span></div>
+          <div class="metric-val">100%</div>
+          <div class="metric-sub">In-Country Private Retention</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">Kernel Packet Drops <span>📊</span></div>
+          <div class="metric-val">0.00%</div>
+          <div class="metric-sub">Linux AF_PACKET Zero-Copy Ring</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">Regulatory Status <span>🇸🇦</span></div>
+          <div class="metric-val">NCA ECC</div>
+          <div class="metric-sub">SAMA CSF · DESC ISR v2.0</div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- Trust Bar / High-Level Metrics -->
-  <div class="trust-bar">
-    <div class="wrap trust-grid">
-      <div class="trust-stat">
-        <div class="num">&lt; 1% CPU</div>
-        <div class="lbl">Zero-Overhead Safe Rust Core</div>
+  <!-- 3D Sovereign Cyber Mesh Section (ThatJoint 3D Tour Style) -->
+  <section class="section-pad" id="mesh">
+    <div class="wrap">
+      <div class="eyebrow">
+        <span>02</span><b>3D Mesh Telemetry</b>
       </div>
-      <div class="trust-stat">
-        <div class="num">60 Seconds</div>
-        <div class="lbl">Turn-Key Sensor Deployment</div>
-      </div>
-      <div class="trust-stat">
-        <div class="num">100+ Feeds</div>
-        <div class="lbl">Automated ThreatFox / C2 Sync</div>
-      </div>
-      <div class="trust-stat">
-        <div class="num">Zero-Payload</div>
-        <div class="lbl">Privacy-First Wire Metadata</div>
+
+      <h2 class="split-heading">
+        Gulf Sovereign Mesh.<br />
+        <em>In real time.</em>
+      </h2>
+
+      <div class="mesh-container">
+        <div class="mesh-head">
+          <div class="mesh-head-title">
+            <h3 id="meshZoneTitle">Full GCC Sovereign Mesh</h3>
+            <p id="meshZoneDesc">Real-time telemetry exchange across GCC sovereign data centers and edge sensors.</p>
+          </div>
+
+          <!-- Zone Selector Buttons -->
+          <div class="mesh-nav" id="meshZoneNav">
+            <button class="mesh-btn active" onclick="switch3DZone('all')">[00] Full GCC Mesh</button>
+            <button class="mesh-btn" onclick="switch3DZone('riyadh')">[01] Riyadh NCA Core</button>
+            <button class="mesh-btn" onclick="switch3DZone('dubai')">[02] Dubai DESC Sensor</button>
+            <button class="mesh-btn" onclick="switch3DZone('scada')">[03] Oil & Gas SCADA</button>
+            <button class="mesh-btn" onclick="switch3DZone('sama')">[04] SAMA Banking</button>
+          </div>
+        </div>
+
+        <!-- Three.js 3D Canvas Viewport -->
+        <div class="mesh-viewport" id="embeddedMesh3D">
+          <div class="mesh-telemetry-hint">Interactive 3D · Drag to rotate · Scroll to zoom · Click nodes</div>
+          
+          <!-- Pop-up Hub Telemetry Card -->
+          <div class="mesh-telemetry-hud" id="meshHubTelemetry"></div>
+        </div>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- Interactive Live Console Simulator -->
-  <section id="simulator">
+  <!-- Platform Operating Modes (ThatJoint Platform Tabs) -->
+  <section class="section-pad" id="platform">
     <div class="wrap">
-      <div class="section-tag">Interactive Simulation</div>
-      <h2 class="section-title">See the NDAP SaaS Console in Real Time</h2>
-      <p class="section-subtitle">
-        Watch live network packets streamed from customer VPC sensors, correlated against automated threat feeds, and evaluated by statistical C2 algorithms in real-time.
-      </p>
+      <div class="eyebrow">
+        <span>03</span><b>Architecture</b>
+      </div>
 
-      <div class="dash-preview-panel">
+      <h2 class="split-heading">
+        One platform.<br />
+        <em>Four sovereign sectors.</em>
+      </h2>
+
+      <!-- Mode Selector Tabs -->
+      <div class="platform-tabs">
+        <button class="platform-tab active" onclick="switchPlatformMode('it')">
+          <span>01 / SECTOR</span>
+          <strong>Enterprise IT Cloud</strong>
+        </button>
+        <button class="platform-tab" onclick="switchPlatformMode('sovereign')">
+          <span>02 / SECTOR</span>
+          <strong>GCC Sovereign Cloud</strong>
+        </button>
+        <button class="platform-tab" onclick="switchPlatformMode('scada')">
+          <span>03 / SECTOR</span>
+          <strong>Oil & Gas SCADA OT</strong>
+        </button>
+        <button class="platform-tab" onclick="switchPlatformMode('banking')">
+          <span>04 / SECTOR</span>
+          <strong>SAMA Banking & Fin</strong>
+        </button>
+      </div>
+
+      <!-- Mode Content Display -->
+      <div class="platform-panel" id="platformPanel">
+        <div class="panel-left">
+          <h3 id="panelTitle">Multi-Cloud VPCs.<br />Zero blind spots.</h3>
+          <p id="panelCopy">
+            Continuous wire-speed packet inspection across Kubernetes clusters, hybrid VPCs, and container ingress. Gain full visibility into east-west microsegmentation traffic with zero agent bloat.
+          </p>
+          <ul class="panel-features" id="panelFeatures">
+            <li><i>✓</i> Zero-copy kernel memory packet tap using pure memory-safe Rust</li>
+            <li><i>✓</i> Automated DNS tunneling and entropy extraction on Port 53</li>
+            <li><i>✓</i> Automated synchronization with ThreatFox C2 feeds</li>
+          </ul>
+        </div>
+
+        <div class="panel-right">
+          <div class="panel-right-title">
+            <span id="panelRightSector">Sector: Enterprise Cloud</span>
+            <span style="color:#34d399;">● Live Telemetry</span>
+          </div>
+
+          <div class="panel-metrics-grid">
+            <div class="panel-metric-item">
+              <small>Monitored Nodes</small>
+              <b id="panelMetricNodes">24 VPC Nodes</b>
+            </div>
+            <div class="panel-metric-item">
+              <small>Packet Throughput</small>
+              <b id="panelMetricPps">1.85 M pkts/s</b>
+            </div>
+            <div class="panel-metric-item">
+              <small>Active Detectors</small>
+              <b id="panelMetricRules">8 Core Rules</b>
+            </div>
+            <div class="panel-metric-item">
+              <small>Data Residency</small>
+              <b id="panelMetricResidency">In-Country 100%</b>
+            </div>
+          </div>
+
+          <div style="background:#0a0f19; padding:10px; border-radius:4px; border-left:3px solid var(--cyan); font-size:11px; color:#94a3b8;" id="panelFooterNote">
+            Compliant with international ISO/IEC 27001 & SOC 2 Type II zero-trust architecture.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Operations Carousel (ThatJoint Ops Carousel) -->
+  <section class="section-pad" id="operations">
+    <div class="wrap">
+      <div class="eyebrow">
+        <span>04</span><b>Detection Rhythm</b>
+      </div>
+
+      <div class="ops-head">
+        <h2 class="split-heading" style="margin-bottom:0;">
+          From raw wire tap<br />
+          <em>to sovereign alert.</em>
+        </h2>
+
+        <div class="ops-controls">
+          <button class="ops-btn" onclick="slideOpsCarousel(-1)" aria-label="Previous slide">←</button>
+          <button class="ops-btn" onclick="slideOpsCarousel(1)" aria-label="Next slide">→</button>
+        </div>
+      </div>
+
+      <div class="ops-carousel-wrap">
+        <div class="ops-track" id="opsTrack">
+          <!-- Slide 01 -->
+          <article class="ops-slide">
+            <div>
+              <div class="ops-step-num">01</div>
+              <h4>Zero-Copy Wire Tap</h4>
+              <p>Linux AF_PACKET memory mapped ring buffers read ethernet frames at physical line-rate without copying memory to userspace.</p>
+            </div>
+            <div class="ops-code">ndap_capture::pcap // 10Gbps line rate</div>
+          </article>
+
+          <!-- Slide 02 -->
+          <article class="ops-slide">
+            <div>
+              <div class="ops-step-num">02</div>
+              <h4>Protocol Dissection</h4>
+              <p>Memory-safe dissectors parse IPv4/IPv6, TCP, UDP, ICMP, DNS, HTTP, and industrial Modbus TCP / DNP3 with zero panic risk.</p>
+            </div>
+            <div class="ops-code">ndap_protocol // Zero C dependencies</div>
+          </article>
+
+          <!-- Slide 03 -->
+          <article class="ops-slide">
+            <div>
+              <div class="ops-step-num">03</div>
+              <h4>Jitter Beacon Hunting</h4>
+              <p>Periodicity analysis clusters inter-arrival intervals and flags periodic C2 pollers with coefficient of variation CV &lt; 0.20.</p>
+            </div>
+            <div class="ops-code">ndap_detect::beaconing // T1071 C2</div>
+          </article>
+
+          <!-- Slide 04 -->
+          <article class="ops-slide">
+            <div>
+              <div class="ops-step-num">04</div>
+              <h4>Automated IOC Sync</h4>
+              <p>Daily automated feeds from ThreatFox, URLhaus, and regional GCC CERTs update in-RAM Bloom filters in &lt; 40ns per packet.</p>
+            </div>
+            <div class="ops-code">ndap_intel::ioc_sync // abuse.ch TLS</div>
+          </article>
+
+          <!-- Slide 05 -->
+          <article class="ops-slide">
+            <div>
+              <div class="ops-step-num">05</div>
+              <h4>Sovereign SOC Delivery</h4>
+              <p>Alerts route directly to local regional SIEM/SOAR clusters (Splunk, Microsoft Sentinel, QRadar) strictly inside national borders.</p>
+            </div>
+            <div class="ops-code">ndap_api // Local In-Country Webhook</div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GCC Sovereign Compliance Matrix -->
+  <section class="section-pad" id="compliance">
+    <div class="wrap">
+      <div class="eyebrow">
+        <span>05</span><b>Regulatory Alignment</b>
+      </div>
+
+      <h2 class="split-heading">
+        Built for Gulf<br />
+        <em>regulatory mandates.</em>
+      </h2>
+
+      <div class="compliance-grid">
+        <div class="compliance-card">
+          <span class="comp-badge">🇸🇦 SAUDI ARABIA</span>
+          <h4>NCA ECC-1:2018</h4>
+          <p>
+            Meets the National Cybersecurity Authority Essential Cybersecurity Controls with mandatory on-premise packet processing, non-repudiation logging, and local key retention.
+          </p>
+        </div>
+
+        <div class="compliance-card">
+          <span class="comp-badge">🇦🇪 UNITED ARAB EMIRATES</span>
+          <h4>DESC ISR & Cloud Standard</h4>
+          <p>
+            Conforms to the Dubai Electronic Security Center Cloud Security Standard (ISR v2.0) and UAE Information Assurance regulations with UAE-North cloud residency.
+          </p>
+        </div>
+
+        <div class="compliance-card">
+          <span class="comp-badge">🇸🇦 SAUDI CENTRAL BANK</span>
+          <h4>SAMA Cyber Security Framework</h4>
+          <p>
+            Built for banks and fintech institutions operating under SAMA, preventing unauthorized data exfiltration, wire tampering, and SWIFT/SARIE payment manipulation.
+          </p>
+        </div>
+
+        <div class="compliance-card">
+          <span class="comp-badge">🇶🇦 STATE OF QATAR</span>
+          <h4>NCSA NIA Policy v2.0</h4>
+          <p>
+            Adheres to the Qatar National Cyber Security Agency National Information Assurance (NIA) policy with full Q-CERT compatibility and zero foreign telemetry transit.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Live Simulator Section -->
+  <section class="section-pad" id="simulator">
+    <div class="wrap">
+      <div class="eyebrow">
+        <span>06</span><b>Live Telemetry Console</b>
+      </div>
+
+      <h2 class="split-heading">
+        Real-time sensor feed.<br />
+        <em>Directly on the wire.</em>
+      </h2>
+
+      <div class="dash-window">
         <div class="dash-topbar">
-          <div class="dash-topbar-left">
-            <div class="dash-dots">
-              <span class="dash-dot r"></span>
-              <span class="dash-dot y"></span>
-              <span class="dash-dot g"></span>
-            </div>
-            <span class="dash-title">NDAP Cloud SOC Dashboard · Production Sensor: <code style="color:var(--cyan);">vpc-us-east-prod</code></span>
+          <div style="display:flex; align-items:center; gap:10px; font-family:var(--mono); font-size:12px;">
+            <span style="color:#10b981;">●</span>
+            <b style="color:#fff;">NDAP Edge Sensor [0.1.0]</b>
+            <span style="color:var(--text-faint);">|</span>
+            <span style="color:var(--cyan);" id="simPacketCounter">4,812 Packets Analyzed</span>
           </div>
-          <div style="display:flex; align-items:center; gap:10px;">
-            <span class="dash-sim-badge">● STREAM ACTIVE</span>
-            <button class="btn btn-sm btn-ghost mono" id="btnToggleSim" onclick="toggleSimulator()">Pause Stream</button>
+          <div>
+            <button class="btn btn-sm btn-ghost" onclick="toggleSimFeed()" id="btnSimPause">⏸ Pause Feed</button>
           </div>
         </div>
 
-        <div class="dash-body">
-          <div class="dash-metric-cards">
-            <div class="dash-metric">
-              <div class="m-val" id="metricPackets">4,812</div>
-              <div class="m-lbl">Packets Inspected</div>
+        <div class="dash-split">
+          <!-- Left: Packet Stream -->
+          <div class="dash-left">
+            <div style="font-family:var(--mono); font-size:11px; color:var(--text-faint); margin-bottom:12px; text-transform:uppercase;">
+              Live Ingest Stream (Riyadh / Dubai Node)
             </div>
-            <div class="dash-metric">
-              <div class="m-val" id="metricFlows">248</div>
-              <div class="m-lbl">Active Conversations</div>
-            </div>
-            <div class="dash-metric">
-              <div class="m-val" style="color:var(--rose);" id="metricThreats">14</div>
-              <div class="m-lbl">Threats Flagged</div>
-            </div>
-            <div class="dash-metric">
-              <div class="m-val" style="color:var(--cyan);">100%</div>
-              <div class="m-lbl">ThreatFox Sync Status</div>
-            </div>
+            <table class="sim-table">
+              <thead>
+                <tr>
+                  <th>PROTO</th>
+                  <th>SOURCE</th>
+                  <th>DESTINATION</th>
+                  <th>SUMMARY</th>
+                </tr>
+              </thead>
+              <tbody id="simPacketTableBody">
+                <!-- Dynamically populated via script -->
+              </tbody>
+            </table>
           </div>
 
-          <div class="dash-grid-split">
-            <!-- Real-time Wire Packet Stream -->
-            <div class="dash-subpanel">
-              <div class="dash-subpanel-head">
-                <span>📡 LIVE SENSOR TELEMETRY FEED (mTLS)</span>
-                <span style="font-size:10.5px; color:var(--text-faint);">Protocol Registry v2</span>
-              </div>
-              <div class="dash-table-wrap">
-                <table class="dash-table">
-                  <thead>
-                    <tr>
-                      <th>Time</th>
-                      <th>Proto</th>
-                      <th>Source</th>
-                      <th>Destination</th>
-                      <th>Dissection Summary</th>
-                    </tr>
-                  </thead>
-                  <tbody id="simPacketRows">
-                    <!-- Dynamic live rows generated by JS -->
-                  </tbody>
-                </table>
-              </div>
+          <!-- Right: MITRE ATT&CK Alert Stream -->
+          <div class="dash-right">
+            <div style="font-family:var(--mono); font-size:11px; color:#ef4444; margin-bottom:12px; text-transform:uppercase; font-weight:700;">
+              🚨 Active MITRE ATT&CK Alerts
             </div>
-
-            <!-- Threat Alert Feed with MITRE Mapping -->
-            <div class="dash-subpanel">
-              <div class="dash-subpanel-head">
-                <span>🚨 REAL-TIME THREAT ALERTS</span>
-                <span style="color:var(--rose); font-size:11px;">MITRE ATT&CK Mapped</span>
-              </div>
-              <div id="simAlertRows" style="overflow-y:auto; max-height:280px;">
-                <!-- Alerts injected here -->
-              </div>
+            <div id="simAlertContainer">
+              <!-- Dynamically populated alerts -->
             </div>
           </div>
         </div>
@@ -867,380 +1115,108 @@
     </div>
   </section>
 
-  <!-- SaaS Value Capabilities -->
-  <section id="features">
-    <div class="wrap">
-      <div class="section-tag">Value Proposition</div>
-      <h2 class="section-title">Why Security Teams Switch to NDAP SaaS</h2>
-      <p class="section-subtitle">
-        Eliminate the headache of deploying heavy JVM/C++ based SIEMs or managing fragile Snort/Suricata rulesets. NDAP delivers defense in depth with zero maintenance.
-      </p>
-
-      <div class="feature-grid">
-        <div class="feature-card">
-          <div class="feature-icon icon-c2">⚡</div>
-          <h3>C2 Beaconing Detection</h3>
-          <p>
-            Proprietary statistical inter-arrival time clustering analyzes delta variation (CV ≤ 0.30) to catch Cobalt Strike, Mythic, and custom reverse shells evading static firewall signatures.
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon icon-intel">🛡️</div>
-          <h3>Automated Threat Intelligence</h3>
-          <p>
-            Continuous background synchronization with ThreatFox, abuse.ch, and custom C2 threat feeds. IP, domain, and hash indicators match incoming traffic in sub-microsecond lookup time.
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon icon-priv">🔒</div>
-          <h3>Zero-Knowledge Wire Privacy</h3>
-          <p>
-            Sensors extract protocol metadata (RFC 1035 DNS, RFC 7230 HTTP, ICMP) and 5-tuple metrics at the perimeter. Customer data payloads never leave your network unless flagged.
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon icon-scale">🚀</div>
-          <h3>Safe Rust Core Architecture</h3>
-          <p>
-            Zero external C dependencies in the protocol decoding engine. Immune to memory corruption, buffer overflows, and parser exploitation bugs that plague legacy packet analyzers.
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon icon-cloud">🌐</div>
-          <h3>Multi-Cloud & Hybrid Native</h3>
-          <p>
-            Deploy unified sensors across AWS VPC Traffic Mirroring, Google Cloud Packet Mirroring, Azure Virtual Network TAP, on-prem bare metal, or Kubernetes DaemonSets.
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon icon-api">🔌</div>
-          <h3>SIEM & Webhook Dispatch</h3>
-          <p>
-            Deliver high-fidelity alerts instantly to Slack, PagerDuty, Microsoft Teams, or stream raw structured JSON events to Splunk, Datadog, Elasticsearch, and custom webhooks.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 60-Second Onboarding / Quickstart -->
-  <section id="deploy">
-    <div class="wrap">
-      <div class="section-tag">Quickstart Onboarding</div>
-      <h2 class="section-title">Connect Your Infrastructure in 60 Seconds</h2>
-      <p class="section-subtitle">
-        Choose your deployment flavor. The sensor auto-discovers network interfaces and streams encrypted telemetry back to your NDAP SaaS tenant.
-      </p>
-
-      <div class="install-box">
-        <div class="install-tabs">
-          <button class="install-tab-btn active" onclick="switchInstallTab('linux')">Linux (systemd)</button>
-          <button class="install-tab-btn" onclick="switchInstallTab('docker')">Docker Container</button>
-          <button class="install-tab-btn" onclick="switchInstallTab('k8s')">Kubernetes (Helm)</button>
-          <button class="install-tab-btn" onclick="switchInstallTab('cloud')">Cloud VPC Mirroring</button>
-        </div>
-
-        <div class="install-content" id="tabContentLinux">
-          <div class="install-step-header">1. Install and start NDAP Sensor service on Ubuntu/Debian/RHEL:</div>
-          <div class="cmd-block">
-            <code>curl -sSL https://get.ndap.cloud/install.sh | sudo bash -s -- --api-key "ndap_live_usr_99a8b"</code>
-            <button class="copy-btn" onclick="copySnippet('curl -sSL https://get.ndap.cloud/install.sh | sudo bash -s -- --api-key &quot;ndap_live_usr_99a8b&quot;')">Copy</button>
-          </div>
-          <p style="font-size:13px; color:var(--text-muted);">
-            The installer registers <code>ndap-sensor.service</code> under systemd, configures automatic restart on crash, and binds to active interfaces with <code>CAP_NET_RAW</code>.
-          </p>
-        </div>
-
-        <div class="install-content" id="tabContentDocker" style="display:none;">
-          <div class="install-step-header">Deploy sensor container in host network mode:</div>
-          <div class="cmd-block">
-            <code>docker run -d --restart=always --net=host --cap-add=NET_ADMIN -e NDAP_KEY="ndap_live_usr_99a8b" ghcr.io/rohit30confluence/ndap-sensor:latest</code>
-            <button class="copy-btn" onclick="copySnippet('docker run -d --restart=always --net=host --cap-add=NET_ADMIN -e NDAP_KEY=&quot;ndap_live_usr_99a8b&quot; ghcr.io/rohit30confluence/ndap-sensor:latest')">Copy</button>
-          </div>
-        </div>
-
-        <div class="install-content" id="tabContentK8s" style="display:none;">
-          <div class="install-step-header">Deploy across all Kubernetes nodes via Helm:</div>
-          <div class="cmd-block">
-            <code>helm repo add ndap https://charts.ndap.cloud && helm install ndap-sensor ndap/sensor --set apiKey="ndap_live_usr_99a8b"</code>
-            <button class="copy-btn" onclick="copySnippet('helm repo add ndap https://charts.ndap.cloud && helm install ndap-sensor ndap/sensor --set apiKey=&quot;ndap_live_usr_99a8b&quot;')">Copy</button>
-          </div>
-        </div>
-
-        <div class="install-content" id="tabContentCloud" style="display:none;">
-          <div class="install-step-header">Agentless VPC Mirroring (AWS VPC Mirror / GCP Packet Mirroring):</div>
-          <p style="font-size:13.5px; color:var(--text-muted); margin-bottom:12px;">
-            Configure your Cloud Provider to forward mirrored VXLAN/Geneve packets directly to your private NDAP Cloud Ingest endpoint:
-          </p>
-          <div class="cmd-block">
-            <code>collector.us-east-1.ingest.ndap.cloud:4789 (VXLAN VNI: 1000)</code>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Architecture & Zero-Knowledge Privacy -->
-  <section id="architecture">
-    <div class="wrap">
-      <div class="section-tag">Zero-Trust Telemetry</div>
-      <h2 class="section-title">Engineered for Strict Enterprise Privacy</h2>
-      <p class="section-subtitle">
-        How NDAP Cloud processes network data without creating privacy or compliance liabilities.
-      </p>
-
-      <div class="arch-strip">
-        <div class="arch-points">
-          <div class="arch-item">
-            <div class="bullet">01</div>
-            <div>
-              <h4>Edge Dissection at the Boundary</h4>
-              <p>Sensors decode L2–L4 packets and extract L7 application metadata locally. Raw packet payloads are zeroized in volatile RAM.</p>
-            </div>
-          </div>
-          <div class="arch-item">
-            <div class="bullet">02</div>
-            <div>
-              <h4>Mutual TLS 1.3 Telemetry Stream</h4>
-              <p>Flow summaries, DNS queries, and security alerts stream over hardware-accelerated mTLS with per-sensor certificates.</p>
-            </div>
-          </div>
-          <div class="arch-item">
-            <div class="bullet">03</div>
-            <div>
-              <h4>Cloud Detection & Global Threat Correlation</h4>
-              <p>The NDAP Cloud correlation cluster matches traffic against millions of synchronized global IOCs and executes behavioral ML models.</p>
-            </div>
-          </div>
-          <div class="arch-item">
-            <div class="bullet">04</div>
-            <div>
-              <h4>Instant Multi-Channel Dispatch</h4>
-              <p>Within &lt; 20ms of detection, alerts trigger incident response playbooks in your Slack, PagerDuty, or SIEM.</p>
-            </div>
-          </div>
-        </div>
-
-        <div style="background:#05070b; border:1px solid var(--border); border-radius:8px; padding:24px; font-family:var(--mono); font-size:12px; color:var(--text-muted);">
-          <div style="color:var(--emerald); margin-bottom:8px;">// SECURITY & COMPLIANCE GUARANTEE</div>
-          <div style="margin-bottom:6px;">✓ Zero customer payload retention</div>
-          <div style="margin-bottom:6px;">✓ End-to-end encrypted wire telemetry</div>
-          <div style="margin-bottom:6px;">✓ SOC 2 Type II audit ready architecture</div>
-          <div style="margin-bottom:6px;">✓ HIPAA & GDPR safe metadata-only filtering</div>
-          <div style="margin-bottom:6px;">✓ Isolated tenant database namespaces</div>
-          <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:14px; color:var(--cyan);">
-            &gt; Sensor status: VERIFIED MEMORY-SAFE (Rust)
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Pricing & Multi-Currency Monetization Section -->
-  <section id="pricing">
+  <!-- Multi-Currency Pricing Section -->
+  <section class="section-pad" id="pricing">
     <div class="wrap">
       <div class="pricing-header">
-        <div class="section-tag">Predictable Worldwide Pricing</div>
-        <h2 class="section-title">Transparent Plans in Your Local Currency</h2>
-        <p class="section-subtitle" style="margin-bottom:12px;">
-          Available globally in all major currencies. Start free with our Community tier or upgrade to Pro / Enterprise for automated threat intelligence and 24/7 coverage.
+        <div class="eyebrow" style="justify-content:center;">
+          <span>07</span><b>Transparent Pricing</b>
+        </div>
+        <h2 class="split-heading" style="text-align:center;">
+          Sovereign cloud tiers.<br />
+          <em>Predictable cost.</em>
+        </h2>
+        <p style="color:var(--text-muted); font-size:16px;">
+          Choose the right detection scale for your organization. All tiers include pure Rust sensors, automated ThreatFox synchronization, and in-country Gulf residency.
         </p>
 
-        <!-- Currency Selector & Billing Switcher -->
-        <div class="pricing-controls">
-          <div class="currency-picker-wrap">
-            <span style="color:var(--text-faint);">Currency:</span>
-            <select id="currencySelector" class="currency-select" onchange="updateCurrency()">
-              <option value="USD">🇺🇸 USD ($)</option>
-              <option value="EUR">🇪🇺 EUR (€)</option>
-              <option value="GBP">🇬🇧 GBP (£)</option>
-              <option value="INR" selected>🇮🇳 INR (₹)</option>
-              <option value="AUD">🇦🇺 AUD (A$)</option>
-              <option value="CAD">🇨🇦 CAD (C$)</option>
-              <option value="JPY">🇯🇵 JPY (¥)</option>
-              <option value="SGD">🇸🇬 SGD (S$)</option>
-              <option value="AED">🇦🇪 AED (AED)</option>
-              <option value="CHF">🇨🇭 CHF (CHF)</option>
-              <option value="BRL">🇧🇷 BRL (R$)</option>
+        <!-- Switcher Bar -->
+        <div class="pricing-switcher-bar">
+          <div class="billing-toggle">
+            <button class="billing-btn active" id="btnBillingMonthly" onclick="setBillingCycle('monthly')">Monthly</button>
+            <button class="billing-btn" id="btnBillingAnnual" onclick="setBillingCycle('annual')">Annual (-20%)</button>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:12px; color:var(--text-faint); font-family:var(--mono);">CURRENCY:</span>
+            <select class="currency-select-hdr" id="pricingCurrencySelect" onchange="changeCurrency(this.value)">
+              <option value="AED">AED (د.إ)</option>
+              <option value="SAR" selected>SAR (ر.س)</option>
+              <option value="QAR">QAR (ر.ق)</option>
+              <option value="KWD">KWD (د.ك)</option>
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+              <option value="INR">INR (₹)</option>
             </select>
           </div>
-
-          <div class="billing-toggle">
-            <span>Monthly</span>
-            <input type="checkbox" id="pricingCycleToggle" onchange="updateCurrency()" style="accent-color:var(--cyan); cursor:pointer;">
-            <label for="pricingCycleToggle" style="cursor:pointer;">Annual (Save 20%)</label>
-            <span class="save-badge">20% OFF</span>
-          </div>
         </div>
       </div>
 
+      <!-- Pricing Cards Grid -->
       <div class="pricing-grid">
-        <!-- Starter Tier -->
+        <!-- Community Plan -->
         <div class="pricing-card">
-          <div class="plan-name">Developer / Free</div>
-          <div class="plan-desc">For individual developers, lab environments, and testing packet capture.</div>
-          <div class="plan-price">
-            <span class="curr" id="currSymDev">₹</span>
-            <span class="val" id="priceDev">0</span>
-            <span class="cycle">/ month</span>
+          <div>
+            <div class="pricing-plan-badge">DEVELOPER</div>
+            <h3 style="font-family:var(--display); font-size:28px; text-transform:uppercase; color:#fff;">Community Free</h3>
+            <p style="color:var(--text-muted); font-size:13px; margin-top:4px;">Single server or local homelab security monitoring.</p>
+            <div class="price-amount" id="priceFree">0</div>
+            <div class="price-sub">Free forever · No credit card required</div>
+            <ul class="price-features">
+              <li><i>✓</i> 1 Edge Sensor Node</li>
+              <li><i>✓</i> Up to 100K packets / day</li>
+              <li><i>✓</i> Basic DNS Tunnel & Plaintext Credential Rules</li>
+              <li><i>✓</i> Local CLI & PCAP Dissector</li>
+              <li><i>✓</i> Community Discord Support</li>
+            </ul>
           </div>
-          <ul class="plan-features">
-            <li><span class="check">✓</span> 1 Edge Network Sensor</li>
-            <li><span class="check">✓</span> 100 Mbps wire throughput</li>
-            <li><span class="check">✓</span> 7-day alert history retention</li>
-            <li><span class="check">✓</span> Core rules: Port Scan, SYN Flood, ARP</li>
-            <li><span class="check">✓</span> Community Discord support</li>
-          </ul>
-          <a href="#deploy" class="btn btn-ghost" style="text-align:center; justify-content:center;">
+          <button class="btn btn-ghost" onclick="openInquiryModal('demo', 'Community Free')" style="width:100%; justify-content:center;">
             Get Started Free
-          </a>
+          </button>
         </div>
 
-        <!-- Pro Tier (Highlighted) -->
+        <!-- Pro Sovereign Plan -->
         <div class="pricing-card featured">
-          <div class="popular-tag">MOST POPULAR</div>
-          <div class="plan-name">Pro / Team</div>
-          <div class="plan-desc">For production startups, SaaS businesses, and mid-market infrastructure.</div>
-          <div class="plan-price">
-            <span class="curr" id="currSymPro">₹</span>
-            <span class="val" id="pricePro">4,100</span>
-            <span class="cycle" id="cyclePro">/ month</span>
+          <div>
+            <div class="pricing-plan-badge" style="background:#0284c7; color:#fff;">POPULAR GCC TIER</div>
+            <h3 style="font-family:var(--display); font-size:28px; text-transform:uppercase; color:#fff;">Pro Sovereign</h3>
+            <p style="color:var(--text-muted); font-size:13px; margin-top:4px;">Multi-VPC cloud environments & mid-size enterprises.</p>
+            <div class="price-amount" id="pricePro">559 SAR</div>
+            <div class="price-sub" id="priceProSub">Billed monthly per organization</div>
+            <ul class="price-features">
+              <li><i>✓</i> Up to 5 Cloud Nodes / VPCs</li>
+              <li><i>✓</i> 10M packets / day wire-speed ingestion</li>
+              <li><i>✓</i> C2 Beaconing Periodicity & Jitter Hunting</li>
+              <li><i>✓</i> Automated ThreatFox IOC Feeds (Daily)</li>
+              <li><i>✓</i> Live WebSocket Dashboard Feed</li>
+              <li><i>✓</i> In-Country Regional Data Retention</li>
+            </ul>
           </div>
-          <ul class="plan-features">
-            <li><span class="check">✓</span> Up to 5 Edge Network Sensors</li>
-            <li><span class="check">✓</span> 1 Gbps wire throughput</li>
-            <li><span class="check">✓</span> 30-day forensic alert retention</li>
-            <li><span class="check">✓</span> C2 Beaconing & DNS Tunneling Heuristics</li>
-            <li><span class="check">✓</span> Hourly ThreatFox & C2 feed auto-sync</li>
-            <li><span class="check">✓</span> Slack, PagerDuty, Webhook dispatch</li>
-            <li><span class="check">✓</span> Priority email support (4h SLA)</li>
-          </ul>
-          <button class="btn btn-primary" onclick="openInquiryModal('demo', 'Pro')" style="text-align:center; justify-content:center; width:100%;">
-            Start 14-Day Free Trial →
+          <button class="btn btn-primary" onclick="openInquiryModal('demo', 'Pro Sovereign')" style="width:100%; justify-content:center;">
+            Start Pro Pilot ↗
           </button>
         </div>
 
-        <!-- Enterprise Tier -->
+        <!-- Enterprise Sovereign Cluster -->
         <div class="pricing-card">
-          <div class="plan-name">Enterprise SOC</div>
-          <div class="plan-desc">For high-throughput environments, multi-VPC enterprises, and MSSPs.</div>
-          <div class="plan-price">
-            <span class="curr" id="currSymEnt">₹</span>
-            <span class="val" id="priceEnt">20,900</span>
-            <span class="cycle" id="cycleEnt">/ month</span>
+          <div>
+            <div class="pricing-plan-badge" style="background:#059669; color:#fff;">GOVERNMENT & ENERGY</div>
+            <h3 style="font-family:var(--display); font-size:28px; text-transform:uppercase; color:#fff;">Enterprise SOC</h3>
+            <p style="color:var(--text-muted); font-size:13px; margin-top:4px;">Critical infrastructure, banks & sovereign cloud clusters.</p>
+            <div class="price-amount" id="priceEnt">2,995 SAR</div>
+            <div class="price-sub" id="priceEntSub">Custom clusters available</div>
+            <ul class="price-features">
+              <li><i>✓</i> Unlimited Sensors & Multi-Cluster Fabric</li>
+              <li><i>✓</i> Unmetered Wire-Speed 10Gbps+ Line Rate</li>
+              <li><i>✓</i> Industrial SCADA (Modbus, DNP3, IEC-104)</li>
+              <li><i>✓</i> Dedicated Gulf Sovereign Cloud Tenant</li>
+              <li><i>✓</i> NCA ECC & SAMA Audit Compliance Package</li>
+              <li><i>✓</i> 24/7 Dedicated Cyber Engineer SLA</li>
+            </ul>
           </div>
-          <ul class="plan-features">
-            <li><span class="check">✓</span> Unlimited Edge Sensors & multi-VPC</li>
-            <li><span class="check">✓</span> 10 Gbps+ dedicated ingest cluster</li>
-            <li><span class="check">✓</span> 365-day cold compliance archive</li>
-            <li><span class="check">✓</span> Custom Sigma & YARA rule authoring</li>
-            <li><span class="check">✓</span> Dedicated Security Analyst monthly reviews</li>
-            <li><span class="check">✓</span> Custom SAML / SSO, RBAC & 99.99% SLA</li>
-            <li><span class="check">✓</span> Dedicated Slack channel & 24/7 phone escalation</li>
-          </ul>
-          <button class="btn btn-emerald" onclick="openInquiryModal('business', 'Enterprise')" style="text-align:center; justify-content:center; width:100%;">
-            Contact Enterprise Sales →
-          </button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Integrations Strip -->
-  <section style="background:#06080d;">
-    <div class="wrap" style="text-align:center;">
-      <div class="section-tag">Seamless Ecosystem</div>
-      <h2 class="section-title">Works With Your Existing SecOps Stack</h2>
-      <div class="integrations-row">
-        <div class="integration-badge">💬 Slack Alerts</div>
-        <div class="integration-badge">🚨 PagerDuty</div>
-        <div class="integration-badge">📈 Splunk Forwarder</div>
-        <div class="integration-badge">🔍 Elasticsearch / OpenSearch</div>
-        <div class="integration-badge">📊 Datadog SIEM</div>
-        <div class="integration-badge">⚡ Custom HTTP Webhooks</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- FAQ Section -->
-  <section id="faq">
-    <div class="wrap">
-      <div class="section-tag">Common Inquiries</div>
-      <h2 class="section-title" style="text-align:center;">Frequently Asked Questions</h2>
-      <p class="section-subtitle" style="text-align:center; margin:0 auto 48px;">
-        Everything you need to know about adopting NDAP as a managed Network Detection SaaS.
-      </p>
-
-      <div class="faq-list">
-        <div class="faq-item open">
-          <div class="faq-question" onclick="toggleFaq(this)">
-            <span>How does NDAP differ from traditional tools like Zeek or Snort?</span>
-            <span class="faq-icon">+</span>
-          </div>
-          <div class="faq-answer">
-            Legacy tools like Zeek or Snort are heavy, complex monoliths written in C/C++ requiring dedicated servers, manual rule compile scripts, and constant maintenance. NDAP is written in pure safe Rust, consumes less than 25MB RAM, and handles wire decoding, flow tracking, automated cloud threat feed correlation, and real-time WebSocket feeds out of the box with zero compilation hassle.
-          </div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
-            <span>Will deploying the sensor cause latency or slow down our network?</span>
-            <span class="faq-icon">+</span>
-          </div>
-          <div class="faq-answer">
-            No. The NDAP sensor operates in passive tap/promiscuous mode or cloud VPC mirroring mode. It reads a copy of network packets asynchronously without sitting inline, meaning it can never introduce latency, throttle throughput, or interrupt production application traffic.
-          </div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
-            <span>Are sensitive customer payloads transmitted to your cloud?</span>
-            <span class="faq-icon">+</span>
-          </div>
-          <div class="faq-answer">
-            No. In our default Zero-Payload Privacy mode, the edge sensor only extracts Layer 3/4 headers, conversation metrics, and protocol metadata (e.g. DNS domain names, HTTP methods/URIs). Raw customer payload bytes are never stored or transmitted, ensuring complete compliance with HIPAA, GDPR, and PCI-DSS requirements.
-          </div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
-            <span>Can I customize detection rules or integrate our proprietary IOC feeds?</span>
-            <span class="faq-icon">+</span>
-          </div>
-          <div class="faq-answer">
-            Yes. Pro and Enterprise customers can upload custom CSV/JSON threat feeds, configure Sigma-lite rules, and author out-of-process Python plugin detection scripts using our Python SDK with full process isolation.
-          </div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
-            <span>Can I cancel or change my plan anytime?</span>
-            <span class="faq-icon">+</span>
-          </div>
-          <div class="faq-answer">
-            Yes. Subscriptions are billed on a flexible monthly or annual basis. You can add or remove sensors and upgrade or downgrade tiers at any time directly through your account settings.
-          </div>
-        </div>
-      </div>
-
-      <!-- Bottom Conversion Callout -->
-      <div class="cta-banner">
-        <h2>Secure Your Infrastructure Today.</h2>
-        <p>Deploy the free sensor in 60 seconds or speak directly with our security engineering and business team.</p>
-        <div style="display:flex; justify-content:center; gap:14px; flex-wrap:wrap;">
-          <button class="btn btn-primary" onclick="openInquiryModal('demo')" style="padding:12px 26px;">
-            📅 Schedule Live Demo →
-          </button>
-          <button class="btn btn-emerald" onclick="openInquiryModal('talk')" style="padding:12px 26px;">
-            💬 Have a Talk with Founder
-          </button>
-          <button class="btn btn-ghost" onclick="openInquiryModal('business')" style="padding:12px 26px;">
-            💼 Business Inquiry
+          <button class="btn btn-emerald" onclick="openInquiryModal('business', 'Enterprise SOC')" style="width:100%; justify-content:center;">
+            Request Enterprise SLA ↗
           </button>
         </div>
       </div>
@@ -1248,7 +1224,7 @@
   </section>
 </main>
 
-<!-- ThatJoint Minimal Pilot & Consultation Request Dialog -->
+<!-- ThatJoint Minimal Pilot Request Dialog -->
 <dialog id="demoDialog" aria-labelledby="dialogTitle" aria-describedby="dialogDescription">
   <form id="demoForm" onsubmit="submitInquiry(event)">
     <!-- Anti-spam Honeypot -->
@@ -1273,8 +1249,9 @@
       <select id="inqFocus" name="focus" required>
         <option value="">Choose a workflow</option>
         <option value="Schedule a live demo">Schedule a live demo</option>
-        <option value="Have a talk / Consultation">Have a talk / Consultation</option>
-        <option value="Business & Enterprise inquiry">Business & Enterprise inquiry</option>
+        <option value="UAE / KSA In-Country Sovereign Cloud">UAE / KSA In-Country Sovereign Cloud</option>
+        <option value="Industrial SCADA & OT Defense">Industrial SCADA & OT Defense</option>
+        <option value="Banking & SAMA Compliance">Banking & SAMA Compliance</option>
         <option value="Wire-speed packet inspection">Wire-speed packet inspection</option>
         <option value="C2 beaconing & jitter hunting">C2 beaconing & jitter hunting</option>
         <option value="Automated remote IOC sync">Automated remote IOC sync</option>
@@ -1294,6 +1271,9 @@
 <!-- ThatJoint Notification Toast -->
 <div class="toast" id="toast" role="status" aria-live="polite">Your Request is precessed , Thanks for interest!</div>
 
+<!-- [⌘K] Sovereign Sentinel Root Container -->
+<div id="sentinelDrawerRoot"></div>
+
 <!-- Footer -->
 <footer>
   <div class="wrap">
@@ -1301,10 +1281,10 @@
       <div class="footer-col">
         <div class="brand" style="margin-bottom:12px;">
           <div class="brand-logo" style="width:26px; height:26px; font-size:13px;">N</div>
-          <span>NDAP Cloud</span>
+          <span>NDAP Sovereign Cloud</span>
         </div>
         <p style="font-size:13px; line-height:1.6; max-width:280px; color:var(--text-faint);">
-          Enterprise Network Detection & Analysis Platform as a Service. Pure Rust edge sensor with automated cloud threat intelligence.
+          Enterprise Network Detection & Analysis Platform as a Service. Pure Rust edge sensor with automated cloud threat intelligence for the Gulf region.
         </p>
         <div style="margin-top:14px;">
           <button class="btn btn-sm btn-ghost" onclick="openInquiryModal('talk')">
@@ -1317,8 +1297,9 @@
         <h5>Product</h5>
         <ul>
           <li><a href="#simulator">Live Console</a></li>
-          <li><a href="#features">Capabilities</a></li>
-          <li><a href="#deploy">Sensor Installation</a></li>
+          <li><a href="#mesh">3D Sovereign Mesh</a></li>
+          <li><a href="#operations">Operations Rhythm</a></li>
+          <li><a href="#compliance">GCC Compliance</a></li>
           <li><a href="#pricing">Pricing Plans</a></li>
         </ul>
       </div>
@@ -1346,90 +1327,359 @@
 
     <div class="footer-bottom">
       <div>© 2026 NDAP Cloud Inc. Founded by Rohit Dinde. Built with memory-safe Rust.</div>
-      <div style="display:flex; gap:16px;">
-        <a href="#architecture">Privacy Protocol</a>
-        <a href="#pricing">Terms of Service</a>
-        <a href="#faq">Security Whitepaper</a>
+      <div style="font-family:var(--mono); font-size:11.5px; color:#34d399;">
+        🇸🇦 KSA · 🇦🇪 UAE · 🇶🇦 QATAR · 🇰🇼 KUWAIT · 🇧🇭 BAHRAIN · 🇴🇲 OMAN
       </div>
     </div>
   </div>
 </footer>
 
-<!-- Interactive Scripts -->
+<!-- Vendor Scripts: Three.js and OrbitControls -->
+<script src="assets/vendor/three.min.js"></script>
+<script src="assets/vendor/OrbitControls.js"></script>
+
+<!-- CDN Fallback in case local vendor scripts are blocked or unavailable -->
 <script>
-// 1. Copy command helper
-function copyHeroCmd() {
-  const text = document.getElementById('heroCmdText').innerText;
-  navigator.clipboard.writeText(text);
-  alert('Copied deployment command to clipboard!');
-}
+  if (typeof THREE === 'undefined') {
+    document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+    document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>');
+  }
+</script>
 
-function copySnippet(snippet) {
-  navigator.clipboard.writeText(snippet);
-  alert('Copied snippet to clipboard!');
-}
+<!-- NDAP 3D Sovereign Mesh & [⌘K] Sentinel HUD Modules -->
+<script src="assets/js/mesh-3d.js" defer></script>
+<script src="assets/js/sentinel-hud.js" defer></script>
 
-// 2. Global Multi-Currency Pricing Table
-const CURRENCY_RATES = {
-  USD: { sym: '$', proMonthly: 49, proAnnual: 39, entMonthly: 249, entAnnual: 199 },
-  EUR: { sym: '€', proMonthly: 45, proAnnual: 36, entMonthly: 229, entAnnual: 185 },
-  GBP: { sym: '£', proMonthly: 39, proAnnual: 31, entMonthly: 199, entAnnual: 159 },
-  INR: { sym: '₹', proMonthly: 4100, proAnnual: 3299, entMonthly: 20900, entAnnual: 16700 },
-  AUD: { sym: 'A$', proMonthly: 75, proAnnual: 60, entMonthly: 380, entAnnual: 300 },
-  CAD: { sym: 'C$', proMonthly: 68, proAnnual: 54, entMonthly: 345, entAnnual: 275 },
-  JPY: { sym: '¥', proMonthly: 7500, proAnnual: 6000, entMonthly: 38000, entAnnual: 30000 },
-  SGD: { sym: 'S$', proMonthly: 65, proAnnual: 52, entMonthly: 330, entAnnual: 265 },
-  AED: { sym: 'AED ', proMonthly: 180, proAnnual: 144, entMonthly: 915, entAnnual: 730 },
-  CHF: { sym: 'CHF ', proMonthly: 44, proAnnual: 35, entMonthly: 225, entAnnual: 180 },
-  BRL: { sym: 'R$', proMonthly: 250, proAnnual: 200, entMonthly: 1290, entAnnual: 1030 }
+<!-- Main Page Interactive Logic -->
+<script>
+// 1. Opening Loader Sequence
+(function initLoader() {
+  const loader = document.getElementById('loader');
+  const loaderCount = document.getElementById('loaderCount');
+  const loaderBar = document.getElementById('loaderBar');
+  if (!loader) return;
+
+  let progress = 0;
+  const duration = 950;
+  const start = performance.now();
+
+  function step(now) {
+    const elapsed = now - start;
+    progress = Math.min(elapsed / duration, 1);
+    const count = Math.round(progress * 99);
+    if (loaderCount) loaderCount.textContent = (count < 10 ? '0' : '') + count;
+    if (loaderBar) loaderBar.style.width = (progress * 100) + '%';
+
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    } else {
+      setTimeout(() => {
+        loader.classList.add('is-complete');
+        setTimeout(() => loader.remove(), 700);
+      }, 200);
+    }
+  }
+  requestAnimationFrame(step);
+})();
+
+// 2. Global Currency Exchange Matrix
+const CURRENCY_DATA = {
+  AED: { symbol: 'AED', rate: 3.6725, pos: 'suffix' },
+  SAR: { symbol: 'SAR', rate: 3.7500, pos: 'suffix' },
+  QAR: { symbol: 'QAR', rate: 3.6400, pos: 'suffix' },
+  KWD: { symbol: 'KWD', rate: 0.3075, pos: 'suffix' },
+  USD: { symbol: '$', rate: 1.0000, pos: 'prefix' },
+  EUR: { symbol: '€', rate: 0.9200, pos: 'prefix' },
+  GBP: { symbol: '£', rate: 0.7900, pos: 'prefix' },
+  INR: { symbol: '₹', rate: 83.2500, pos: 'prefix' }
 };
 
-function formatPrice(num) {
-  return num.toLocaleString();
+let currentCurrency = 'SAR';
+let currentBillingCycle = 'monthly';
+
+const BASE_PRICES_USD = {
+  free: 0,
+  proMonthly: 149,
+  proAnnual: 119,
+  entMonthly: 799,
+  entAnnual: 639
+};
+
+function formatPrice(val, curr) {
+  if (val === 0) return '0';
+  const c = CURRENCY_DATA[curr] || CURRENCY_DATA['SAR'];
+  const converted = Math.round(val * c.rate);
+  const formatted = converted.toLocaleString();
+  return c.pos === 'prefix' ? `${c.symbol}${formatted}` : `${formatted} ${c.symbol}`;
 }
 
-function updateCurrency() {
-  const sel = document.getElementById('currencySelector').value;
-  const isAnnual = document.getElementById('pricingCycleToggle').checked;
-  const rate = CURRENCY_RATES[sel] || CURRENCY_RATES.USD;
+function updatePricingDisplay() {
+  const isAnnual = currentBillingCycle === 'annual';
+  const proVal = isAnnual ? BASE_PRICES_USD.proAnnual : BASE_PRICES_USD.proMonthly;
+  const entVal = isAnnual ? BASE_PRICES_USD.entAnnual : BASE_PRICES_USD.entMonthly;
 
-  // Symbols
-  document.getElementById('currSymDev').innerText = rate.sym;
-  document.getElementById('currSymPro').innerText = rate.sym;
-  document.getElementById('currSymEnt').innerText = rate.sym;
+  const freeEl = document.getElementById('priceFree');
+  const proEl = document.getElementById('pricePro');
+  const entEl = document.getElementById('priceEnt');
 
-  // Prices
-  const proVal = isAnnual ? rate.proAnnual : rate.proMonthly;
-  const entVal = isAnnual ? rate.entAnnual : rate.entMonthly;
+  if (freeEl) freeEl.textContent = formatPrice(0, currentCurrency);
+  if (proEl) proEl.textContent = formatPrice(proVal, currentCurrency);
+  if (entEl) entEl.textContent = formatPrice(entVal, currentCurrency);
 
-  document.getElementById('pricePro').innerText = formatPrice(proVal);
-  document.getElementById('priceEnt').innerText = formatPrice(entVal);
+  const proSub = document.getElementById('priceProSub');
+  const entSub = document.getElementById('priceEntSub');
+  if (proSub) proSub.textContent = isAnnual ? 'Billed annually (-20% discount applied)' : 'Billed monthly per organization';
+  if (entSub) entSub.textContent = isAnnual ? 'Billed annually · Dedicated engineering team' : 'Custom clusters available';
 
-  const cycleText = isAnnual ? '/ mo (billed annually)' : '/ month';
-  document.getElementById('cyclePro').innerText = cycleText;
-  document.getElementById('cycleEnt').innerText = cycleText;
+  const hSelect = document.getElementById('headerCurrencySelect');
+  const pSelect = document.getElementById('pricingCurrencySelect');
+  if (hSelect && hSelect.value !== currentCurrency) hSelect.value = currentCurrency;
+  if (pSelect && pSelect.value !== currentCurrency) pSelect.value = currentCurrency;
 }
 
-// 3. Tab switching for Quickstart
-function switchInstallTab(tab) {
-  const tabs = ['linux', 'docker', 'k8s', 'cloud'];
-  tabs.forEach(t => {
-    const el = document.getElementById('tabContent' + t.charAt(0).toUpperCase() + t.slice(1));
-    if (el) el.style.display = (t === tab) ? 'block' : 'none';
+function changeCurrency(newCurr) {
+  currentCurrency = newCurr;
+  updatePricingDisplay();
+}
+
+function setBillingCycle(cycle) {
+  currentBillingCycle = cycle;
+  document.getElementById('btnBillingMonthly')?.classList.toggle('active', cycle === 'monthly');
+  document.getElementById('btnBillingAnnual')?.classList.toggle('active', cycle === 'annual');
+  updatePricingDisplay();
+}
+
+// 3. Platform Operating Modes Data
+const PLATFORM_DATA = {
+  it: {
+    sector: 'Sector: Enterprise Cloud',
+    title: 'Multi-Cloud VPCs.<br />Zero blind spots.',
+    copy: 'Continuous wire-speed packet inspection across Kubernetes clusters, hybrid VPCs, and container ingress. Gain full visibility into east-west microsegmentation traffic with zero agent bloat.',
+    features: [
+      'Zero-copy kernel memory packet tap using pure memory-safe Rust',
+      'Automated DNS tunneling and entropy extraction on Port 53',
+      'Automated synchronization with ThreatFox C2 feeds'
+    ],
+    nodes: '24 VPC Nodes',
+    pps: '1.85 M pkts/s',
+    rules: '8 Core Rules',
+    residency: 'In-Country 100%',
+    note: 'Compliant with international ISO/IEC 27001 & SOC 2 Type II zero-trust architecture.'
+  },
+  sovereign: {
+    sector: 'Sector: GCC Sovereign Cloud',
+    title: 'Sovereign data centers.<br />Strict in-country residency.',
+    copy: 'Designed specifically for Oracle Cloud Jeddah/Riyadh, Google Cloud Dammam/Doha, and Azure UAE North. Every packet is dissected and logged locally inside national borders without external routing.',
+    features: [
+      'Certified compliance with Saudi NCA ECC-1:2018 and Personal Data Protection Law',
+      'Dubai Electronic Security Center (DESC) ISR v2.0 Tier-3 verified',
+      'Localized sovereign cryptokeys with zero foreign metadata transmission'
+    ],
+    nodes: '18 Sovereign VPCs',
+    pps: '2.41 M pkts/s',
+    rules: '14 Sovereign Rules',
+    residency: 'Saudi & UAE 100%',
+    note: 'Audited against Saudi NCA ECC-1:2018 and UAE DESC Cloud Security Standard.'
+  },
+  scada: {
+    sector: 'Sector: Oil & Gas / SCADA OT',
+    title: 'Critical infrastructure.<br />Industrial OT defense.',
+    copy: 'Deep packet inspection tailored for refineries, gas pipelines, power grids, and desalination facilities. Flags unauthorized Modbus function codes, DNP3 protocol abuse, and PLC firmware injection.',
+    features: [
+      'Native dissectors for Modbus TCP (Port 502) and DNP3 (Port 20000)',
+      'Aramco Cybersecurity Compliance Certificate (CCC) aligned',
+      'Real-time anomaly scoring for ICS holding register manipulations'
+    ],
+    nodes: '32 Substation PLCs',
+    pps: '840 K pkts/s',
+    rules: '12 SCADA Rules',
+    residency: 'Plant Air-Gap / VPC',
+    note: 'Tested on industrial petrochemical control networks across the Eastern Province.'
+  },
+  banking: {
+    sector: 'Sector: SAMA Banking & Fin',
+    title: 'Banking networks.<br />Zero wire tampering.',
+    copy: 'Engineered for financial institutions governed by the Saudi Central Bank (SAMA) and UAE Central Bank. Inspects high-velocity payment backbones and SWIFT/SARIE message transfers.',
+    features: [
+      'Full compliance with the SAMA Cyber Security Framework',
+      'Detection of TLS covert tunneling and unauthorized API data staging',
+      'Sub-millisecond packet telemetry with cryptographic audit logs'
+    ],
+    nodes: '12 Banking Clusters',
+    pps: '3.10 M pkts/s',
+    rules: '16 Financial Rules',
+    residency: 'Tier-A SAMA Mesh',
+    note: 'Meets SAMA and Central Bank of UAE non-repudiation and network isolation mandates.'
+  }
+};
+
+function switchPlatformMode(modeKey) {
+  const d = PLATFORM_DATA[modeKey] || PLATFORM_DATA.it;
+  document.querySelectorAll('.platform-tab').forEach((t, idx) => {
+    t.classList.toggle('active', (modeKey === 'it' && idx === 0) || (modeKey === 'sovereign' && idx === 1) || (modeKey === 'scada' && idx === 2) || (modeKey === 'banking' && idx === 3));
   });
 
-  const buttons = document.querySelectorAll('.install-tab-btn');
-  buttons.forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
+  const titleEl = document.getElementById('panelTitle');
+  const copyEl = document.getElementById('panelCopy');
+  const featEl = document.getElementById('panelFeatures');
+  const rightSectorEl = document.getElementById('panelRightSector');
+  const nodesEl = document.getElementById('panelMetricNodes');
+  const ppsEl = document.getElementById('panelMetricPps');
+  const rulesEl = document.getElementById('panelMetricRules');
+  const resEl = document.getElementById('panelMetricResidency');
+  const noteEl = document.getElementById('panelFooterNote');
+
+  if (titleEl) titleEl.innerHTML = d.title;
+  if (copyEl) copyEl.textContent = d.copy;
+  if (featEl) {
+    featEl.innerHTML = d.features.map(f => `<li><i>✓</i> ${f}</li>`).join('');
+  }
+  if (rightSectorEl) rightSectorEl.textContent = d.sector;
+  if (nodesEl) nodesEl.textContent = d.nodes;
+  if (ppsEl) ppsEl.textContent = d.pps;
+  if (rulesEl) rulesEl.textContent = d.rules;
+  if (resEl) resEl.textContent = d.residency;
+  if (noteEl) noteEl.textContent = d.note;
 }
 
-// 4. FAQ Accordion
-function toggleFaq(btn) {
-  const item = btn.parentElement;
-  item.classList.toggle('open');
+// 4. Operations Carousel Sliding
+function slideOpsCarousel(direction) {
+  const track = document.getElementById('opsTrack');
+  if (!track) return;
+  const slideWidth = 380;
+  track.scrollBy({ left: direction * slideWidth, behavior: 'smooth' });
 }
 
-// 5. ThatJoint Minimal Pilot Dialog & Confirmation Toast Logic
+// 5. 3D Sovereign Cyber Mesh Initialization
+let cyberMeshInstance = null;
+
+function init3DCyberMesh() {
+  const container = document.getElementById('embeddedMesh3D');
+  if (container && typeof NdapCyberMesh !== 'undefined') {
+    cyberMeshInstance = new NdapCyberMesh({ container: container });
+  }
+}
+
+function switch3DZone(zoneKey) {
+  if (cyberMeshInstance) {
+    cyberMeshInstance.switchZone(zoneKey);
+  }
+  document.querySelectorAll('.mesh-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('onclick').includes(zoneKey));
+  });
+}
+
+// 6. [⌘K] Sentinel HUD Launcher
+let sentinelHudInstance = null;
+
+function initSentinelHud() {
+  if (typeof NdapSentinelHud !== 'undefined') {
+    sentinelHudInstance = new NdapSentinelHud({ drawerId: 'sentinelDrawerRoot' });
+  }
+}
+
+function toggleSentinelHud() {
+  if (sentinelHudInstance) {
+    sentinelHudInstance.toggle();
+  }
+}
+
+// 7. Interactive Live Simulator
+let simInterval = null;
+let simActive = true;
+let packetCount = 4812;
+
+const samplePackets = [
+  { proto: 'DNS', pill: 'pill-dns', src: '10.0.4.15:52310', dst: '8.8.8.8:53', summary: 'DNS Query: api.github.com (A)' },
+  { proto: 'TCP', pill: 'pill-tcp', src: '10.0.4.15:44321', dst: '140.82.121.4:443', summary: 'TCP [SYN,ACK] Seq=14092 Win=65535' },
+  { proto: 'SCADA', pill: 'pill-scada', src: '192.168.44.12:49182', dst: '192.168.44.2:502', summary: 'Modbus TCP Read Holding Regs (40001-40016)' },
+  { proto: 'HTTP', pill: 'pill-http', src: '10.0.1.80:54120', dst: '192.168.1.10:80', summary: 'HTTP GET /api/v1/health' },
+  { proto: 'DNS', pill: 'pill-dns', src: '10.0.9.44:59102', dst: '1.1.1.1:53', summary: 'DNS Query: c2-stage2.beacon.internal (A)' },
+  { proto: 'TCP', pill: 'pill-tcp', src: '198.51.100.44:8443', dst: '10.0.9.44:49152', summary: 'TCP [PSH,ACK] Periodic C2 Poll (Δt=4.0s)' },
+  { proto: 'ICMP', pill: 'pill-icmp', src: '10.0.4.1:0', dst: '10.0.4.15:0', summary: 'ICMP Echo Request (Ping)' }
+];
+
+const sampleAlerts = [
+  {
+    rule: 'c2_beaconing',
+    sev: 'CRITICAL',
+    badge: 'alert-critical',
+    mitre: 'T1071',
+    msg: 'Periodic C2 beaconing detected from 10.0.9.44 to 198.51.100.44:8443 (mean: 4.0s, jitter CV: 0.08)'
+  },
+  {
+    rule: 'scada_tamper',
+    sev: 'HIGH',
+    badge: 'alert-high',
+    mitre: 'T0814',
+    msg: 'Industrial Modbus unauthorized write attempt to register 40042 (Eastern Province Grid)'
+  },
+  {
+    rule: 'dns_tunneling',
+    sev: 'HIGH',
+    badge: 'alert-high',
+    mitre: 'T1048',
+    msg: 'High-entropy DNS exfiltration query detected: d3b07384d113edec49eaa6238ad5ff00.beacon.internal'
+  }
+];
+
+function renderPacketRow(pkt) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><span class="pill ${pkt.pill}">${pkt.proto}</span></td>
+    <td style="color:#cbd5e1;">${pkt.src}</td>
+    <td style="color:#cbd5e1;">${pkt.dst}</td>
+    <td style="color:var(--text-muted);">${pkt.summary}</td>
+  `;
+  return tr;
+}
+
+function startSimulator() {
+  const tbody = document.getElementById('simPacketTableBody');
+  const alertBox = document.getElementById('simAlertContainer');
+  const counterEl = document.getElementById('simPacketCounter');
+
+  if (tbody) {
+    tbody.innerHTML = '';
+    samplePackets.slice(0, 4).forEach(p => tbody.appendChild(renderPacketRow(p)));
+  }
+
+  if (alertBox) {
+    alertBox.innerHTML = sampleAlerts.map(a => `
+      <div class="sim-alert-card">
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <b style="color:#ef4444;">${a.rule.toUpperCase()}</b>
+          <span style="color:var(--cyan); font-family:var(--mono);">${a.mitre}</span>
+        </div>
+        <div style="color:#cbd5e1; font-size:11.5px;">${a.msg}</div>
+      </div>
+    `).join('');
+  }
+
+  if (simInterval) clearInterval(simInterval);
+  simInterval = setInterval(() => {
+    if (!simActive || !tbody) return;
+
+    packetCount += Math.floor(Math.random() * 14) + 6;
+    if (counterEl) counterEl.textContent = packetCount.toLocaleString() + ' Packets Analyzed';
+
+    const randPkt = samplePackets[Math.floor(Math.random() * samplePackets.length)];
+    const newRow = renderPacketRow(randPkt);
+    tbody.insertBefore(newRow, tbody.firstChild);
+
+    if (tbody.children.length > 7) {
+      tbody.removeChild(tbody.lastChild);
+    }
+  }, 1600);
+}
+
+function toggleSimFeed() {
+  simActive = !simActive;
+  const btn = document.getElementById('btnSimPause');
+  if (btn) btn.textContent = simActive ? '⏸ Pause Feed' : '▶ Resume Feed';
+}
+
+// 8. ThatJoint Minimal Pilot Dialog & Confirmation Toast Logic
 const demoDialog = document.getElementById('demoDialog');
 const demoForm = document.getElementById('demoForm');
 const toast = document.getElementById('toast');
@@ -1456,9 +1706,9 @@ function openInquiryModal(type = 'demo', planName = '') {
     if (type === 'demo') {
       focusSelect.value = 'Schedule a live demo';
     } else if (type === 'talk') {
-      focusSelect.value = 'Have a talk / Consultation';
+      focusSelect.value = 'UAE / KSA In-Country Sovereign Cloud';
     } else if (type === 'business') {
-      focusSelect.value = 'Business & Enterprise inquiry';
+      focusSelect.value = 'Industrial SCADA & OT Defense';
     } else {
       focusSelect.value = 'Wire-speed packet inspection';
     }
@@ -1551,13 +1801,14 @@ async function submitInquiry(e) {
         'Accept': 'application/json'
       },
       body: JSON.stringify({
-        _subject: `[NDAP Cloud] ${focus} from ${name}`,
+        _subject: `[NDAP Cloud GCC] ${focus} from ${name}`,
         _template: 'table',
         _captcha: 'false',
         lead_name: name,
         lead_email: email,
         pilot_focus: focus,
         requirements: notes,
+        currency_preference: currentCurrency,
         timestamp: new Date().toISOString()
       })
     });
@@ -1576,117 +1827,15 @@ async function submitInquiry(e) {
   }
 }
 
-// 6. Interactive Simulator Script
-let simInterval = null;
-let simActive = true;
-let packetCount = 4812;
-
-const samplePackets = [
-  { proto: 'DNS', pill: 'pill-dns', src: '10.0.4.15:52310', dst: '8.8.8.8:53', summary: 'DNS Query: api.github.com (A)' },
-  { proto: 'TCP', pill: 'pill-tcp', src: '10.0.4.15:44321', dst: '140.82.121.4:443', summary: 'TCP [SYN,ACK] Seq=14092 Win=65535' },
-  { proto: 'HTTP', pill: 'pill-http', src: '10.0.1.80:54120', dst: '192.168.1.10:80', summary: 'HTTP GET /api/v1/health' },
-  { proto: 'DNS', pill: 'pill-dns', src: '10.0.9.44:59102', dst: '1.1.1.1:53', summary: 'DNS Query: c2-stage2.beacon.internal (A)' },
-  { proto: 'TCP', pill: 'pill-tcp', src: '198.51.100.44:8443', dst: '10.0.9.44:49152', summary: 'TCP [PSH,ACK] Periodic C2 Poll (Δt=4.0s)' },
-  { proto: 'ICMP', pill: 'pill-icmp', src: '10.0.4.1:0', dst: '10.0.4.15:0', summary: 'ICMP Echo Request (Ping)' }
-];
-
-const sampleAlerts = [
-  {
-    rule: 'c2_beaconing',
-    sev: 'CRITICAL',
-    badge: 'alert-critical',
-    mitre: 'T1071',
-    msg: 'Periodic C2 beaconing detected from 10.0.9.44 to 198.51.100.44:8443 (mean: 4.0s, jitter CV: 0.08)'
-  },
-  {
-    rule: 'dns_tunneling',
-    sev: 'HIGH',
-    badge: 'alert-high',
-    mitre: 'T1048',
-    msg: 'High-entropy DNS exfiltration query detected: v10-a9f8b7c6d5e4f.tunnel.exfil-data.org (H=4.38)'
-  },
-  {
-    rule: 'cleartext_credentials',
-    sev: 'HIGH',
-    badge: 'alert-high',
-    mitre: 'T1552',
-    msg: 'HTTP Basic Authentication transmitted unencrypted to intranet.corp (/login)'
-  }
-];
-
-function initSimulator() {
-  const tbody = document.getElementById('simPacketRows');
-  const alertsDiv = document.getElementById('simAlertRows');
-
-  samplePackets.slice(0, 5).forEach(p => {
-    tbody.appendChild(createPacketTr(p));
-  });
-
-  sampleAlerts.forEach(a => {
-    alertsDiv.appendChild(createAlertDiv(a));
-  });
-
-  startSimLoop();
-}
-
-function createPacketTr(p) {
-  const tr = document.createElement('tr');
-  const now = new Date();
-  const timeStr = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0');
-  tr.innerHTML = `
-    <td style="color:var(--text-faint);">${timeStr}</td>
-    <td><span class="pill ${p.pill}">${p.proto}</span></td>
-    <td>${p.src}</td>
-    <td>${p.dst}</td>
-    <td style="color:${p.summary.includes('C2') ? 'var(--rose)' : 'var(--text-muted)'};">${p.summary}</td>
-  `;
-  return tr;
-}
-
-function createAlertDiv(a) {
-  const div = document.createElement('div');
-  div.className = 'alert-feed-item';
-  div.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <span class="alert-badge ${a.badge}">● ${a.sev}</span>
-      <span class="alert-mitre">${a.mitre}</span>
-    </div>
-    <div style="font-weight:600; color:#fff; font-size:12px;">Rule: ${a.rule}</div>
-    <div style="font-size:11.5px; color:var(--text-muted);">${a.msg}</div>
-  `;
-  return div;
-}
-
-function startSimLoop() {
-  if (simInterval) clearInterval(simInterval);
-  simInterval = setInterval(() => {
-    if (!simActive) return;
-
-    packetCount += Math.floor(Math.random() * 5) + 1;
-    document.getElementById('metricPackets').innerText = packetCount.toLocaleString();
-
-    const tbody = document.getElementById('simPacketRows');
-    const randomPkt = samplePackets[Math.floor(Math.random() * samplePackets.length)];
-    const newTr = createPacketTr(randomPkt);
-    tbody.insertBefore(newTr, tbody.firstChild);
-
-    if (tbody.children.length > 7) {
-      tbody.removeChild(tbody.lastChild);
-    }
-  }, 1200);
-}
-
-function toggleSimulator() {
-  simActive = !simActive;
-  const btn = document.getElementById('btnToggleSim');
-  btn.innerText = simActive ? 'Pause Stream' : 'Resume Stream';
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  initSimulator();
-  updateCurrency();
+// 9. Boot on DOM Ready
+document.addEventListener('DOMContentLoaded', () => {
+  updatePricingDisplay();
+  startSimulator();
+  setTimeout(() => {
+    init3DCyberMesh();
+    initSentinelHud();
+  }, 100);
 });
 </script>
-
 </body>
 </html>
