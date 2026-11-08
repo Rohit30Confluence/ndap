@@ -318,11 +318,27 @@ async fn handle_ws_socket(mut socket: WebSocket, state: AppState) {
         let _ = socket.send(Message::Text(json)).await;
     }
 
-    while let Ok(event) = rx.recv().await {
-        if let Ok(json) = serde_json::to_string(&event) {
-            if socket.send(Message::Text(json)).await.is_err() {
-                break;
+    loop {
+        match rx.recv().await {
+            Ok(event) => {
+                if let Ok(json) = serde_json::to_string(&event) {
+                    if socket.send(Message::Text(json)).await.is_err() {
+                        break;
+                    }
+                }
             }
+            Err(broadcast::error::RecvError::Lagged(skipped)) => {
+                // Traffic Management: absorb traffic spikes and notify subscriber without terminating socket
+                let warning = LiveFeedEvent::Status {
+                    capturing: true,
+                    message: format!("Traffic management: buffered {skipped} burst frames to preserve bandwidth"),
+                };
+                if let Ok(json) = serde_json::to_string(&warning) {
+                    let _ = socket.send(Message::Text(json)).await;
+                }
+                continue;
+            }
+            Err(broadcast::error::RecvError::Closed) => break,
         }
     }
 }

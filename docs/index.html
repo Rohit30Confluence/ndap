@@ -1150,6 +1150,9 @@
 
     <div class="modal-body">
       <form id="inquiryForm" onsubmit="submitInquiry(event)">
+        <!-- Honeypot anti-spam bot field -->
+        <input type="text" id="inqHoney" style="display:none;" tabindex="-1" autocomplete="off">
+
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Full Name *</label>
@@ -1187,25 +1190,25 @@
           <textarea class="form-textarea" id="inqMessage" placeholder="Tell us about your detection requirements, compliance timeline (SOC2/HIPAA), or preferred time for a call..."></textarea>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px; font-size:14px;">
-          ✉️ Send Query Directly to Team →
+        <button type="submit" id="btnSubmitInq" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px; font-size:14px;">
+          ✉️ Send Query Directly to Rohit (dinde.infosec@gmail.com) →
         </button>
       </form>
 
-      <!-- Confirmation Box -->
+      <!-- Confirmation & Traffic Pipeline Status Box -->
       <div class="modal-status-box" id="modalStatusBox">
-        <div style="font-weight:700; margin-bottom:4px;">✅ Inquiry Ready!</div>
-        <div style="margin-bottom:8px;">Your default email client has been opened with your inquiry pre-filled. If it didn't open automatically, click below:</div>
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <a id="btnDirectMailto" href="#" class="btn btn-sm btn-emerald" style="color:#fff;">
-            Open Email Client
+        <div style="font-weight:700; margin-bottom:4px;" id="statusHeader">✅ Dispatching Telemetry...</div>
+        <div style="margin-bottom:8px;" id="statusDetails">Routing inquiry directly to <code>dinde.infosec@gmail.com</code>...</div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+          <a id="btnDirectMailto" href="mailto:dinde.infosec@gmail.com" class="btn btn-sm btn-emerald" style="color:#fff;">
+            Open in Email App
           </a>
           <button class="btn btn-sm btn-ghost" onclick="copyInquiryText()">
             📋 Copy Inquiry Details
           </button>
         </div>
         <div style="margin-top:10px; font-size:11.5px; color:var(--text-muted);">
-          Recipient: <code style="color:var(--cyan);">rohitdinde30@gmail.com</code> &amp; <code style="color:var(--cyan);">sales@ndap.cloud</code>
+          Direct Target: <code style="color:var(--cyan);">dinde.infosec@gmail.com</code>
         </div>
       </div>
     </div>
@@ -1242,13 +1245,12 @@
       </div>
 
       <div class="footer-col">
-        <h5>Contact & Sales</h5>
+        <h5>Contact & Inquiries</h5>
         <ul>
           <li><a href="javascript:void(0)" onclick="openInquiryModal('demo')">Schedule Live Demo</a></li>
           <li><a href="javascript:void(0)" onclick="openInquiryModal('talk')">Have a Talk / Call</a></li>
           <li><a href="javascript:void(0)" onclick="openInquiryModal('business')">Business & Enterprise Queries</a></li>
-          <li><a href="mailto:rohitdinde30@gmail.com">rohitdinde30@gmail.com</a></li>
-          <li><a href="mailto:sales@ndap.cloud">sales@ndap.cloud</a></li>
+          <li><a href="mailto:dinde.infosec@gmail.com">dinde.infosec@gmail.com</a></li>
         </ul>
       </div>
 
@@ -1398,8 +1400,31 @@ function switchModalType(type) {
   }
 }
 
-function submitInquiry(e) {
+// Client-side Traffic Management & Lead Rate-Limiting
+let lastInquirySubmitTime = 0;
+
+async function submitInquiry(e) {
   e.preventDefault();
+
+  // 1. Anti-spam honeypot verification
+  const honey = document.getElementById('inqHoney').value;
+  if (honey) {
+    console.warn('Bot submission suppressed via honeypot.');
+    return;
+  }
+
+  // 2. Traffic rate limiting / debouncing (minimum 6s throttle)
+  const now = Date.now();
+  if (now - lastInquirySubmitTime < 6000) {
+    alert('Please wait a few seconds before submitting another inquiry.');
+    return;
+  }
+  lastInquirySubmitTime = now;
+
+  const btnSubmit = document.getElementById('btnSubmitInq');
+  const originalBtnText = btnSubmit.innerHTML;
+  btnSubmit.disabled = true;
+  btnSubmit.innerHTML = '⏳ Routing Telemetry to dinde.infosec@gmail.com...';
 
   const name = document.getElementById('inqName').value.trim();
   const email = document.getElementById('inqEmail').value.trim();
@@ -1414,7 +1439,8 @@ function submitInquiry(e) {
     business: 'Business & Enterprise Query'
   };
 
-  const subject = encodeURIComponent(`[NDAP Cloud] ${typeLabels[currentInquiryType]} from ${name} (${company})`);
+  const subjectText = `[NDAP Cloud] ${typeLabels[currentInquiryType]} from ${name} (${company})`;
+  const subjectEncoded = encodeURIComponent(subjectText);
 
   const bodyContent = 
 `Hello Rohit & NDAP Security Team,
@@ -1435,26 +1461,64 @@ Looking forward to your reply.
 Best regards,
 ${name}`;
 
-  const mailtoUrl = `mailto:rohitdinde30@gmail.com,sales@ndap.cloud?subject=${subject}&body=${encodeURIComponent(bodyContent)}`;
+  const targetEmail = 'dinde.infosec@gmail.com';
+  const mailtoUrl = `mailto:${targetEmail}?subject=${subjectEncoded}&body=${encodeURIComponent(bodyContent)}`;
   currentGeneratedMailto = mailtoUrl;
   currentInquirySummary = bodyContent;
 
-  // Open email client
-  window.location.href = mailtoUrl;
-
-  // Display confirmation in modal
   const statusBox = document.getElementById('modalStatusBox');
+  const statusHeader = document.getElementById('statusHeader');
+  const statusDetails = document.getElementById('statusDetails');
+  const btnDirect = document.getElementById('btnDirectMailto');
+  btnDirect.href = mailtoUrl;
+
   statusBox.className = 'modal-status-box success';
   statusBox.style.display = 'block';
 
-  const btnDirect = document.getElementById('btnDirectMailto');
-  btnDirect.href = mailtoUrl;
+  // 3. Asynchronous HTTPS Ingestion Gateway directly to dinde.infosec@gmail.com
+  try {
+    const response = await fetch('https://formsubmit.co/ajax/' + targetEmail, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        _subject: subjectText,
+        _template: 'table',
+        _captcha: 'false',
+        request_type: typeLabels[currentInquiryType],
+        client_name: name,
+        work_email: email,
+        company: company,
+        phone_contact: phone,
+        infrastructure_scale: scale,
+        message_requirements: msg,
+        submission_timestamp: new Date().toISOString()
+      })
+    });
+
+    if (response.ok) {
+      statusHeader.innerText = '✅ Inquiry Successfully Dispatched!';
+      statusDetails.innerHTML = `Your inquiry was routed directly to <strong>${targetEmail}</strong>. Rohit will reply to <strong>${email}</strong> shortly.`;
+    } else {
+      throw new Error('Fallback to mail client');
+    }
+  } catch (err) {
+    // Graceful traffic management fallback to native mailto client
+    window.location.href = mailtoUrl;
+    statusHeader.innerText = '✅ Inquiry Ready in Email Client!';
+    statusDetails.innerHTML = `Opened your mail client to <strong>${targetEmail}</strong>. You can also click below if it did not launch:`;
+  } finally {
+    btnSubmit.disabled = false;
+    btnSubmit.innerHTML = originalBtnText;
+  }
 }
 
 function copyInquiryText() {
   if (currentInquirySummary) {
     navigator.clipboard.writeText(currentInquirySummary);
-    alert('Copied inquiry details to clipboard! You can also paste it directly into an email to rohitdinde30@gmail.com');
+    alert('Copied inquiry details to clipboard! You can paste it into an email to dinde.infosec@gmail.com');
   }
 }
 
