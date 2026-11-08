@@ -75,7 +75,7 @@
   header {
     border-bottom: 1px solid var(--border);
     position: sticky; top: 0;
-    background: rgba(8, 11, 17, 0.92);
+    background: rgba(8, 11, 17, 0.94);
     backdrop-filter: blur(12px);
     z-index: 50;
     padding: 16px 0;
@@ -101,7 +101,7 @@
     color: var(--cyan); border-radius: 12px; text-transform: uppercase;
   }
 
-  nav.desktop-nav { display: flex; align-items: center; gap: 26px; }
+  nav.desktop-nav { display: flex; align-items: center; gap: 24px; }
   nav.desktop-nav a {
     color: var(--text-muted); font-size: 13.5px; font-weight: 500;
   }
@@ -139,7 +139,7 @@
 
   /* Hero Section */
   .hero {
-    padding: 88px 0 64px;
+    padding: 84px 0 60px;
     text-align: center;
     position: relative;
   }
@@ -158,9 +158,9 @@
   @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
   h1.hero-title {
-    font-size: clamp(34px, 5.2vw, 58px);
-    font-weight: 800; line-height: 1.14; letter-spacing: -0.03em;
-    color: #fff; max-width: 860px; margin: 0 auto;
+    font-size: clamp(34px, 5.2vw, 56px);
+    font-weight: 800; line-height: 1.15; letter-spacing: -0.03em;
+    color: #fff; max-width: 880px; margin: 0 auto;
   }
   h1.hero-title span.accent-grad {
     background: linear-gradient(135deg, #38bdf8, #818cf8, #34d399);
@@ -168,11 +168,11 @@
   }
   p.hero-desc {
     font-size: clamp(16px, 2vw, 19px); color: var(--text-muted);
-    max-width: 720px; margin: 24px auto 36px; line-height: 1.6;
+    max-width: 740px; margin: 24px auto 36px; line-height: 1.6;
   }
   .hero-ctas {
     display: flex; justify-content: center; align-items: center;
-    gap: 16px; flex-wrap: wrap; margin-bottom: 48px;
+    gap: 16px; flex-wrap: wrap; margin-bottom: 44px;
   }
   .hero-install-preview {
     max-width: 680px; margin: 0 auto;
@@ -218,7 +218,7 @@
     letter-spacing: -0.02em; margin-bottom: 16px;
   }
   .section-subtitle {
-    font-size: 16px; color: var(--text-muted); max-width: 660px; line-height: 1.6;
+    font-size: 16px; color: var(--text-muted); max-width: 680px; line-height: 1.6;
     margin-bottom: 48px;
   }
 
@@ -339,18 +339,39 @@
   .feature-card h3 { font-size: 18px; font-weight: 700; color: #fff; }
   .feature-card p { font-size: 14.5px; color: var(--text-muted); line-height: 1.6; }
 
-  /* Pricing Section */
-  .pricing-header { text-align: center; max-width: 700px; margin: 0 auto 48px; }
-  .billing-toggle {
-    display: inline-flex; align-items: center; gap: 12px;
+  /* Pricing Section & Multi-Currency Controls */
+  .pricing-header { text-align: center; max-width: 820px; margin: 0 auto 48px; }
+  
+  .pricing-controls {
+    display: flex; justify-content: center; align-items: center;
+    gap: 16px; flex-wrap: wrap; margin-top: 24px;
+  }
+  
+  .currency-picker-wrap {
+    display: inline-flex; align-items: center; gap: 8px;
     background: #0d131d; border: 1px solid var(--border);
-    padding: 6px 14px; border-radius: 30px; margin-top: 20px;
+    padding: 6px 14px; border-radius: 30px; font-size: 13px; font-weight: 600;
+  }
+  .currency-select {
+    background: transparent; color: var(--cyan); border: none;
+    font-family: var(--mono); font-size: 13px; font-weight: 700;
+    cursor: pointer; outline: none;
+  }
+  .currency-select option {
+    background: #0d131d; color: var(--text-main);
+  }
+
+  .billing-toggle {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: #0d131d; border: 1px solid var(--border);
+    padding: 6px 14px; border-radius: 30px;
     font-size: 13px; font-weight: 600;
   }
   .billing-toggle span.save-badge {
     background: rgba(16, 185, 129, 0.15); color: var(--emerald);
     padding: 2px 8px; border-radius: 12px; font-size: 11px;
   }
+  
   .pricing-grid {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 24px; align-items: stretch;
@@ -373,10 +394,10 @@
   }
   .plan-name { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 6px; }
   .plan-desc { font-size: 13.5px; color: var(--text-muted); margin-bottom: 24px; min-height: 40px; }
-  .plan-price { display: flex; align-items: baseline; gap: 4px; margin-bottom: 24px; }
-  .plan-price .curr { font-size: 24px; font-weight: 700; color: #fff; }
-  .plan-price .val { font-size: 46px; font-weight: 800; font-family: var(--mono); color: #fff; }
-  .plan-price .cycle { font-size: 14px; color: var(--text-faint); }
+  .plan-price { display: flex; align-items: baseline; gap: 6px; margin-bottom: 24px; }
+  .plan-price .curr { font-size: 22px; font-weight: 700; color: #fff; }
+  .plan-price .val { font-size: 44px; font-weight: 800; font-family: var(--mono); color: #fff; }
+  .plan-price .cycle { font-size: 13.5px; color: var(--text-faint); }
   
   .plan-features { list-style: none; margin-bottom: 32px; flex: 1; display: flex; flex-direction: column; gap: 12px; }
   .plan-features li {
@@ -426,10 +447,10 @@
   .arch-item h4 { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 4px; }
   .arch-item p { font-size: 13.5px; color: var(--text-muted); }
 
-  /* API & Integrations */
+  /* Integrations */
   .integrations-row {
     display: flex; justify-content: center; align-items: center;
-    gap: 32px; flex-wrap: wrap; margin-top: 32px; opacity: 0.85;
+    gap: 24px; flex-wrap: wrap; margin-top: 32px; opacity: 0.9;
   }
   .integration-badge {
     display: flex; align-items: center; gap: 8px; font-family: var(--mono);
@@ -458,13 +479,72 @@
 
   /* CTA Banner */
   .cta-banner {
-    background: linear-gradient(135deg, rgba(2, 132, 199, 0.2), rgba(16, 185, 129, 0.15));
-    border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px;
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.25), rgba(16, 185, 129, 0.18));
+    border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 12px;
     padding: 48px 36px; text-align: center; margin-top: 40px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
   }
   .cta-banner h2 { font-size: 32px; font-weight: 800; color: #fff; margin-bottom: 14px; }
-  .cta-banner p { font-size: 16px; color: var(--text-muted); max-width: 600px; margin: 0 auto 28px; }
+  .cta-banner p { font-size: 16px; color: var(--text-muted); max-width: 620px; margin: 0 auto 28px; }
+
+  /* Interactive Inquiry / Schedule Demo Modal */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(4, 6, 10, 0.85);
+    backdrop-filter: blur(8px); z-index: 100;
+    display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-backdrop.active { display: flex; }
+  .modal-window {
+    background: #0d131d; border: 1px solid var(--border-bright);
+    border-radius: 12px; width: 100%; max-width: 580px;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.8); overflow: hidden;
+    animation: modalSlide 0.25s ease-out;
+  }
+  @keyframes modalSlide { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+  .modal-header {
+    background: var(--panel-header); border-bottom: 1px solid var(--border);
+    padding: 18px 24px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .modal-title { font-size: 17px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+  .modal-close {
+    background: none; border: none; color: var(--text-muted); font-size: 20px;
+    cursor: pointer; padding: 4px; line-height: 1;
+  }
+  .modal-close:hover { color: #fff; }
+
+  .modal-type-tabs {
+    display: flex; border-bottom: 1px solid var(--border); background: #090e16;
+  }
+  .modal-type-tab {
+    flex: 1; padding: 12px 14px; font-size: 12px; font-weight: 600;
+    color: var(--text-muted); background: none; border: none; cursor: pointer;
+    border-bottom: 2px solid transparent; text-align: center;
+  }
+  .modal-type-tab.active { color: var(--cyan); border-bottom-color: var(--cyan); background: #0d131d; }
+
+  .modal-body { padding: 24px; }
+  .form-group { margin-bottom: 16px; }
+  .form-label {
+    display: block; font-size: 12px; font-weight: 600; color: var(--text-muted);
+    margin-bottom: 6px; font-family: var(--mono); text-transform: uppercase;
+  }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; background: #06090e; border: 1px solid var(--border);
+    border-radius: 6px; padding: 10px 14px; color: var(--text-main); font-size: 13.5px;
+    font-family: var(--sans); outline: none; transition: border-color 0.15s ease;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--cyan); }
+  .form-textarea { resize: vertical; min-height: 80px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  .modal-status-box {
+    margin-top: 14px; padding: 12px; border-radius: 6px; font-size: 12.5px;
+    display: none;
+  }
+  .modal-status-box.success {
+    background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399;
+  }
 
   /* Footer */
   footer {
@@ -512,12 +592,12 @@
     </nav>
 
     <div class="nav-actions">
-      <a href="https://github.com/Rohit30Confluence/ndap" class="btn btn-sm btn-ghost mono" target="_blank" rel="noreferrer">
-        GitHub ↗
-      </a>
-      <a href="#pricing" class="btn btn-sm btn-primary">
-        Start Free Trial →
-      </a>
+      <button class="btn btn-sm btn-ghost" onclick="openInquiryModal('talk')">
+        💬 Have a Talk
+      </button>
+      <button class="btn btn-sm btn-primary" onclick="openInquiryModal('demo')">
+        📅 Schedule Demo →
+      </button>
     </div>
   </div>
 </header>
@@ -542,11 +622,14 @@
       </p>
 
       <div class="hero-ctas">
-        <a href="#deploy" class="btn btn-primary" style="padding: 12px 24px; font-size: 15px;">
-          🚀 Deploy Edge Sensor (Free)
-        </a>
-        <a href="#simulator" class="btn btn-ghost" style="padding: 12px 24px; font-size: 15px;">
-          ⚡ Explore Live SaaS Demo
+        <button class="btn btn-primary" onclick="openInquiryModal('demo')" style="padding: 12px 24px; font-size: 15px;">
+          📅 Schedule Live Demo
+        </button>
+        <button class="btn btn-emerald" onclick="openInquiryModal('talk')" style="padding: 12px 24px; font-size: 15px;">
+          💬 Have a Talk with Founder
+        </button>
+        <a href="#deploy" class="btn btn-ghost" style="padding: 12px 24px; font-size: 15px;">
+          🚀 60s Sensor Quickstart
         </a>
       </div>
 
@@ -840,21 +923,41 @@
     </div>
   </section>
 
-  <!-- Pricing & Monetization Section -->
+  <!-- Pricing & Multi-Currency Monetization Section -->
   <section id="pricing">
     <div class="wrap">
       <div class="pricing-header">
-        <div class="section-tag">Predictable Plans</div>
-        <h2 class="section-title">Transparent Pricing for Growing Teams</h2>
+        <div class="section-tag">Predictable Worldwide Pricing</div>
+        <h2 class="section-title">Transparent Plans in Your Local Currency</h2>
         <p class="section-subtitle" style="margin-bottom:12px;">
-          Start free with our Community tier, or unlock full cloud threat intelligence, automated feeds, and 24/7 alerting with Pro and Enterprise.
+          Available globally in all major currencies. Start free with our Community tier or upgrade to Pro / Enterprise for automated threat intelligence and 24/7 coverage.
         </p>
 
-        <div class="billing-toggle">
-          <span>Monthly</span>
-          <input type="checkbox" id="pricingCycleToggle" onchange="toggleBillingCycle()" style="accent-color:var(--cyan); cursor:pointer;">
-          <label for="pricingCycleToggle" style="cursor:pointer;">Annual Billing</label>
-          <span class="save-badge">SAVE 20%</span>
+        <!-- Currency Selector & Billing Switcher -->
+        <div class="pricing-controls">
+          <div class="currency-picker-wrap">
+            <span style="color:var(--text-faint);">Currency:</span>
+            <select id="currencySelector" class="currency-select" onchange="updateCurrency()">
+              <option value="USD">🇺🇸 USD ($)</option>
+              <option value="EUR">🇪🇺 EUR (€)</option>
+              <option value="GBP">🇬🇧 GBP (£)</option>
+              <option value="INR" selected>🇮🇳 INR (₹)</option>
+              <option value="AUD">🇦🇺 AUD (A$)</option>
+              <option value="CAD">🇨🇦 CAD (C$)</option>
+              <option value="JPY">🇯🇵 JPY (¥)</option>
+              <option value="SGD">🇸🇬 SGD (S$)</option>
+              <option value="AED">🇦🇪 AED (AED)</option>
+              <option value="CHF">🇨🇭 CHF (CHF)</option>
+              <option value="BRL">🇧🇷 BRL (R$)</option>
+            </select>
+          </div>
+
+          <div class="billing-toggle">
+            <span>Monthly</span>
+            <input type="checkbox" id="pricingCycleToggle" onchange="updateCurrency()" style="accent-color:var(--cyan); cursor:pointer;">
+            <label for="pricingCycleToggle" style="cursor:pointer;">Annual (Save 20%)</label>
+            <span class="save-badge">20% OFF</span>
+          </div>
         </div>
       </div>
 
@@ -864,7 +967,7 @@
           <div class="plan-name">Developer / Free</div>
           <div class="plan-desc">For individual developers, lab environments, and testing packet capture.</div>
           <div class="plan-price">
-            <span class="curr">$</span>
+            <span class="curr" id="currSymDev">₹</span>
             <span class="val" id="priceDev">0</span>
             <span class="cycle">/ month</span>
           </div>
@@ -886,8 +989,8 @@
           <div class="plan-name">Pro / Team</div>
           <div class="plan-desc">For production startups, SaaS businesses, and mid-market infrastructure.</div>
           <div class="plan-price">
-            <span class="curr">$</span>
-            <span class="val" id="pricePro">49</span>
+            <span class="curr" id="currSymPro">₹</span>
+            <span class="val" id="pricePro">4,100</span>
             <span class="cycle" id="cyclePro">/ month</span>
           </div>
           <ul class="plan-features">
@@ -899,9 +1002,9 @@
             <li><span class="check">✓</span> Slack, PagerDuty, Webhook dispatch</li>
             <li><span class="check">✓</span> Priority email support (4h SLA)</li>
           </ul>
-          <a href="mailto:sales@ndap.cloud?subject=NDAP%20Pro%20Subscription%20Inquiry" class="btn btn-primary" style="text-align:center; justify-content:center;">
+          <button class="btn btn-primary" onclick="openInquiryModal('demo', 'Pro')" style="text-align:center; justify-content:center; width:100%;">
             Start 14-Day Free Trial →
-          </a>
+          </button>
         </div>
 
         <!-- Enterprise Tier -->
@@ -909,8 +1012,8 @@
           <div class="plan-name">Enterprise SOC</div>
           <div class="plan-desc">For high-throughput environments, multi-VPC enterprises, and MSSPs.</div>
           <div class="plan-price">
-            <span class="curr">$</span>
-            <span class="val" id="priceEnt">249</span>
+            <span class="curr" id="currSymEnt">₹</span>
+            <span class="val" id="priceEnt">20,900</span>
             <span class="cycle" id="cycleEnt">/ month</span>
           </div>
           <ul class="plan-features">
@@ -922,9 +1025,9 @@
             <li><span class="check">✓</span> Custom SAML / SSO, RBAC & 99.99% SLA</li>
             <li><span class="check">✓</span> Dedicated Slack channel & 24/7 phone escalation</li>
           </ul>
-          <a href="mailto:sales@ndap.cloud?subject=NDAP%20Enterprise%20SOC%20Custom%20Quote" class="btn btn-emerald" style="text-align:center; justify-content:center;">
+          <button class="btn btn-emerald" onclick="openInquiryModal('business', 'Enterprise')" style="text-align:center; justify-content:center; width:100%;">
             Contact Enterprise Sales →
-          </a>
+          </button>
         </div>
       </div>
     </div>
@@ -1010,15 +1113,104 @@
       <!-- Bottom Conversion Callout -->
       <div class="cta-banner">
         <h2>Secure Your Infrastructure Today.</h2>
-        <p>Deploy the free sensor in 60 seconds or speak with our security engineering team for a customized enterprise demonstration.</p>
+        <p>Deploy the free sensor in 60 seconds or speak directly with our security engineering and business team.</p>
         <div style="display:flex; justify-content:center; gap:14px; flex-wrap:wrap;">
-          <a href="#deploy" class="btn btn-primary" style="padding:12px 26px;">Deploy Free Sensor →</a>
-          <a href="mailto:sales@ndap.cloud?subject=Schedule%20NDAP%20SaaS%20Demo" class="btn btn-ghost" style="padding:12px 26px;">Schedule Demo</a>
+          <button class="btn btn-primary" onclick="openInquiryModal('demo')" style="padding:12px 26px;">
+            📅 Schedule Live Demo →
+          </button>
+          <button class="btn btn-emerald" onclick="openInquiryModal('talk')" style="padding:12px 26px;">
+            💬 Have a Talk with Founder
+          </button>
+          <button class="btn btn-ghost" onclick="openInquiryModal('business')" style="padding:12px 26px;">
+            💼 Business Inquiry
+          </button>
         </div>
       </div>
     </div>
   </section>
 </main>
+
+<!-- Interactive Direct Business Query & Demo Schedule Modal -->
+<div class="modal-backdrop" id="inquiryModal" onclick="closeModalOnBackdrop(event)">
+  <div class="modal-window">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">
+        <span>📅</span>
+        <span id="modalTitleText">Schedule a Live Demo</span>
+      </div>
+      <button class="modal-close" onclick="closeInquiryModal()">&times;</button>
+    </div>
+
+    <!-- Modal Tab Selector -->
+    <div class="modal-type-tabs">
+      <button class="modal-type-tab active" id="tabDemo" onclick="switchModalType('demo')">📅 Schedule Demo</button>
+      <button class="modal-type-tab" id="tabTalk" onclick="switchModalType('talk')">💬 Have a Talk</button>
+      <button class="modal-type-tab" id="tabBusiness" onclick="switchModalType('business')">💼 Business Query</button>
+    </div>
+
+    <div class="modal-body">
+      <form id="inquiryForm" onsubmit="submitInquiry(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" class="form-input" id="inqName" placeholder="Alex Morgan" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Work Email *</label>
+            <input type="email" class="form-input" id="inqEmail" placeholder="alex@company.com" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Company / Team *</label>
+            <input type="text" class="form-input" id="inqCompany" placeholder="Acme Cybersecurity" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone / WhatsApp</label>
+            <input type="text" class="form-input" id="inqPhone" placeholder="+1 (555) 019-2834">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Infrastructure Scale</label>
+          <select class="form-select" id="inqScale">
+            <option value="1-5 Nodes / VPCs">1–5 Nodes / VPCs (Pro Tier)</option>
+            <option value="5-25 Nodes / VPCs">5–25 Nodes / Multi-VPC</option>
+            <option value="25+ Enterprise Cluster">25+ Nodes Enterprise SOC Cluster</option>
+            <option value="ISP / MSP Partner">ISP / MSP Reseller Partnership</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Message / Specific Requirements</label>
+          <textarea class="form-textarea" id="inqMessage" placeholder="Tell us about your detection requirements, compliance timeline (SOC2/HIPAA), or preferred time for a call..."></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px; font-size:14px;">
+          ✉️ Send Query Directly to Team →
+        </button>
+      </form>
+
+      <!-- Confirmation Box -->
+      <div class="modal-status-box" id="modalStatusBox">
+        <div style="font-weight:700; margin-bottom:4px;">✅ Inquiry Ready!</div>
+        <div style="margin-bottom:8px;">Your default email client has been opened with your inquiry pre-filled. If it didn't open automatically, click below:</div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <a id="btnDirectMailto" href="#" class="btn btn-sm btn-emerald" style="color:#fff;">
+            Open Email Client
+          </a>
+          <button class="btn btn-sm btn-ghost" onclick="copyInquiryText()">
+            📋 Copy Inquiry Details
+          </button>
+        </div>
+        <div style="margin-top:10px; font-size:11.5px; color:var(--text-muted);">
+          Recipient: <code style="color:var(--cyan);">rohitdinde30@gmail.com</code> &amp; <code style="color:var(--cyan);">sales@ndap.cloud</code>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Footer -->
 <footer>
@@ -1032,6 +1224,11 @@
         <p style="font-size:13px; line-height:1.6; max-width:280px; color:var(--text-faint);">
           Enterprise Network Detection & Analysis Platform as a Service. Pure Rust edge sensor with automated cloud threat intelligence.
         </p>
+        <div style="margin-top:14px;">
+          <button class="btn btn-sm btn-ghost" onclick="openInquiryModal('talk')">
+            Have a Talk →
+          </button>
+        </div>
       </div>
 
       <div class="footer-col">
@@ -1045,6 +1242,17 @@
       </div>
 
       <div class="footer-col">
+        <h5>Contact & Sales</h5>
+        <ul>
+          <li><a href="javascript:void(0)" onclick="openInquiryModal('demo')">Schedule Live Demo</a></li>
+          <li><a href="javascript:void(0)" onclick="openInquiryModal('talk')">Have a Talk / Call</a></li>
+          <li><a href="javascript:void(0)" onclick="openInquiryModal('business')">Business & Enterprise Queries</a></li>
+          <li><a href="mailto:rohitdinde30@gmail.com">rohitdinde30@gmail.com</a></li>
+          <li><a href="mailto:sales@ndap.cloud">sales@ndap.cloud</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
         <h5>Resources</h5>
         <ul>
           <li><a href="https://github.com/Rohit30Confluence/ndap" target="_blank" rel="noreferrer">GitHub Repository</a></li>
@@ -1053,19 +1261,10 @@
           <li><a href="https://threatfox.abuse.ch/" target="_blank" rel="noreferrer">ThreatFox Feeds</a></li>
         </ul>
       </div>
-
-      <div class="footer-col">
-        <h5>Contact</h5>
-        <ul>
-          <li><a href="mailto:sales@ndap.cloud">sales@ndap.cloud</a></li>
-          <li><a href="mailto:support@ndap.cloud">support@ndap.cloud</a></li>
-          <li><a href="https://github.com/Rohit30Confluence/ndap/issues" target="_blank" rel="noreferrer">Issue Tracker</a></li>
-        </ul>
-      </div>
     </div>
 
     <div class="footer-bottom">
-      <div>© 2026 NDAP Cloud Inc. All rights reserved. Built with safe Rust.</div>
+      <div>© 2026 NDAP Cloud Inc. Founded by Rohit Dinde. Built with memory-safe Rust.</div>
       <div style="display:flex; gap:16px;">
         <a href="#architecture">Privacy Protocol</a>
         <a href="#pricing">Terms of Service</a>
@@ -1089,25 +1288,45 @@ function copySnippet(snippet) {
   alert('Copied snippet to clipboard!');
 }
 
-// 2. Billing cycle toggle (Annual discount)
-function toggleBillingCycle() {
-  const isAnnual = document.getElementById('pricingCycleToggle').checked;
-  const proVal = document.getElementById('pricePro');
-  const entVal = document.getElementById('priceEnt');
-  const proCycle = document.getElementById('cyclePro');
-  const entCycle = document.getElementById('cycleEnt');
+// 2. Global Multi-Currency Pricing Table
+const CURRENCY_RATES = {
+  USD: { sym: '$', proMonthly: 49, proAnnual: 39, entMonthly: 249, entAnnual: 199 },
+  EUR: { sym: '€', proMonthly: 45, proAnnual: 36, entMonthly: 229, entAnnual: 185 },
+  GBP: { sym: '£', proMonthly: 39, proAnnual: 31, entMonthly: 199, entAnnual: 159 },
+  INR: { sym: '₹', proMonthly: 4100, proAnnual: 3299, entMonthly: 20900, entAnnual: 16700 },
+  AUD: { sym: 'A$', proMonthly: 75, proAnnual: 60, entMonthly: 380, entAnnual: 300 },
+  CAD: { sym: 'C$', proMonthly: 68, proAnnual: 54, entMonthly: 345, entAnnual: 275 },
+  JPY: { sym: '¥', proMonthly: 7500, proAnnual: 6000, entMonthly: 38000, entAnnual: 30000 },
+  SGD: { sym: 'S$', proMonthly: 65, proAnnual: 52, entMonthly: 330, entAnnual: 265 },
+  AED: { sym: 'AED ', proMonthly: 180, proAnnual: 144, entMonthly: 915, entAnnual: 730 },
+  CHF: { sym: 'CHF ', proMonthly: 44, proAnnual: 35, entMonthly: 225, entAnnual: 180 },
+  BRL: { sym: 'R$', proMonthly: 250, proAnnual: 200, entMonthly: 1290, entAnnual: 1030 }
+};
 
-  if (isAnnual) {
-    proVal.innerText = '39'; // $39/mo billed annually
-    entVal.innerText = '199'; // $199/mo billed annually
-    proCycle.innerText = '/ mo (billed annually)';
-    entCycle.innerText = '/ mo (billed annually)';
-  } else {
-    proVal.innerText = '49';
-    entVal.innerText = '249';
-    proCycle.innerText = '/ month';
-    entCycle.innerText = '/ month';
-  }
+function formatPrice(num) {
+  return num.toLocaleString();
+}
+
+function updateCurrency() {
+  const sel = document.getElementById('currencySelector').value;
+  const isAnnual = document.getElementById('pricingCycleToggle').checked;
+  const rate = CURRENCY_RATES[sel] || CURRENCY_RATES.USD;
+
+  // Symbols
+  document.getElementById('currSymDev').innerText = rate.sym;
+  document.getElementById('currSymPro').innerText = rate.sym;
+  document.getElementById('currSymEnt').innerText = rate.sym;
+
+  // Prices
+  const proVal = isAnnual ? rate.proAnnual : rate.proMonthly;
+  const entVal = isAnnual ? rate.entAnnual : rate.entMonthly;
+
+  document.getElementById('pricePro').innerText = formatPrice(proVal);
+  document.getElementById('priceEnt').innerText = formatPrice(entVal);
+
+  const cycleText = isAnnual ? '/ mo (billed annually)' : '/ month';
+  document.getElementById('cyclePro').innerText = cycleText;
+  document.getElementById('cycleEnt').innerText = cycleText;
 }
 
 // 3. Tab switching for Quickstart
@@ -1129,12 +1348,120 @@ function toggleFaq(btn) {
   item.classList.toggle('open');
 }
 
-// 5. Interactive Simulator Script
+// 5. Direct Email & Demo Scheduling Modal Logic
+let currentInquiryType = 'demo';
+let currentGeneratedMailto = '';
+let currentInquirySummary = '';
+
+function openInquiryModal(type = 'demo', planName = '') {
+  currentInquiryType = type;
+  document.getElementById('inquiryModal').classList.add('active');
+  switchModalType(type);
+
+  if (planName) {
+    document.getElementById('inqMessage').value = `Inquiring about ${planName} Plan setup for our infrastructure.`;
+  }
+}
+
+function closeInquiryModal() {
+  document.getElementById('inquiryModal').classList.remove('active');
+  document.getElementById('modalStatusBox').style.display = 'none';
+  document.getElementById('modalStatusBox').classList.remove('success');
+}
+
+function closeModalOnBackdrop(e) {
+  if (e.target.id === 'inquiryModal') {
+    closeInquiryModal();
+  }
+}
+
+function switchModalType(type) {
+  currentInquiryType = type;
+  const tabDemo = document.getElementById('tabDemo');
+  const tabTalk = document.getElementById('tabTalk');
+  const tabBusiness = document.getElementById('tabBusiness');
+  const title = document.getElementById('modalTitleText');
+
+  tabDemo.classList.remove('active');
+  tabTalk.classList.remove('active');
+  tabBusiness.classList.remove('active');
+
+  if (type === 'demo') {
+    tabDemo.classList.add('active');
+    title.innerText = 'Schedule a Live Demo';
+  } else if (type === 'talk') {
+    tabTalk.classList.add('active');
+    title.innerText = 'Have a Talk / Consultation';
+  } else {
+    tabBusiness.classList.add('active');
+    title.innerText = 'Business & Enterprise Query';
+  }
+}
+
+function submitInquiry(e) {
+  e.preventDefault();
+
+  const name = document.getElementById('inqName').value.trim();
+  const email = document.getElementById('inqEmail').value.trim();
+  const company = document.getElementById('inqCompany').value.trim();
+  const phone = document.getElementById('inqPhone').value.trim() || 'Not provided';
+  const scale = document.getElementById('inqScale').value;
+  const msg = document.getElementById('inqMessage').value.trim() || 'No additional notes.';
+
+  const typeLabels = {
+    demo: 'Live Demo Request',
+    talk: 'Consultation & Technical Discussion',
+    business: 'Business & Enterprise Query'
+  };
+
+  const subject = encodeURIComponent(`[NDAP Cloud] ${typeLabels[currentInquiryType]} from ${name} (${company})`);
+
+  const bodyContent = 
+`Hello Rohit & NDAP Security Team,
+
+I would like to get in touch regarding NDAP Cloud SaaS:
+
+• Type of Request: ${typeLabels[currentInquiryType]}
+• Name: ${name}
+• Work Email: ${email}
+• Company: ${company}
+• Phone / WhatsApp: ${phone}
+• Infrastructure Scale: ${scale}
+
+• Notes / Requirements:
+${msg}
+
+Looking forward to your reply.
+Best regards,
+${name}`;
+
+  const mailtoUrl = `mailto:rohitdinde30@gmail.com,sales@ndap.cloud?subject=${subject}&body=${encodeURIComponent(bodyContent)}`;
+  currentGeneratedMailto = mailtoUrl;
+  currentInquirySummary = bodyContent;
+
+  // Open email client
+  window.location.href = mailtoUrl;
+
+  // Display confirmation in modal
+  const statusBox = document.getElementById('modalStatusBox');
+  statusBox.className = 'modal-status-box success';
+  statusBox.style.display = 'block';
+
+  const btnDirect = document.getElementById('btnDirectMailto');
+  btnDirect.href = mailtoUrl;
+}
+
+function copyInquiryText() {
+  if (currentInquirySummary) {
+    navigator.clipboard.writeText(currentInquirySummary);
+    alert('Copied inquiry details to clipboard! You can also paste it directly into an email to rohitdinde30@gmail.com');
+  }
+}
+
+// 6. Interactive Simulator Script
 let simInterval = null;
 let simActive = true;
 let packetCount = 4812;
-let flowCount = 248;
-let alertCount = 14;
 
 const samplePackets = [
   { proto: 'DNS', pill: 'pill-dns', src: '10.0.4.15:52310', dst: '8.8.8.8:53', summary: 'DNS Query: api.github.com (A)' },
@@ -1173,7 +1500,6 @@ function initSimulator() {
   const tbody = document.getElementById('simPacketRows');
   const alertsDiv = document.getElementById('simAlertRows');
 
-  // Populate initial rows
   samplePackets.slice(0, 5).forEach(p => {
     tbody.appendChild(createPacketTr(p));
   });
@@ -1235,14 +1561,13 @@ function startSimLoop() {
 function toggleSimulator() {
   simActive = !simActive;
   const btn = document.getElementById('btnToggleSim');
-  if (simActive) {
-    btn.innerText = 'Pause Stream';
-  } else {
-    btn.innerText = 'Resume Stream';
-  }
+  btn.innerText = simActive ? 'Pause Stream' : 'Resume Stream';
 }
 
-window.addEventListener('DOMContentLoaded', initSimulator);
+window.addEventListener('DOMContentLoaded', () => {
+  initSimulator();
+  updateCurrency();
+});
 </script>
 
 </body>
